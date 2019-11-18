@@ -81,9 +81,3 @@
     - '{{ static_labs }}'
     - domain_subnets
 
-#########################
-# Openstack related prep
-#########################
-
-# Create the openstack domain with cloud admin
-

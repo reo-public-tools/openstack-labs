@@ -137,3 +137,11 @@ static_labs:
         subnet_dhcp_to: "172.20.88.255"
         subnet_gateway: "172.20.88.1"
         subnet_bootmode: "Static"
+
+
+
+#############################################################
+# Variables to set up the compute profile to allow the
+# foreman to spin up instances in the openstack environment
+#############################################################
+

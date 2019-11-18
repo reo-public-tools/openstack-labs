@@ -1,4 +1,12 @@
 ---
+- name: Add the rackspace ssh keys
+  hosts: katello_vms
+  become: true
+  tags:
+    - add_rackspace_ca_certs
+  roles:
+    - add_rackspace_ca_certs
+
 - name: Prep the katello environment for labs
   hosts: localhost
   connection: local
