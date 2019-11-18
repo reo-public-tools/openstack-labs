@@ -1,0 +1,139 @@
+##########################################
+# Org and Location that holds the labs
+# The labs are defined with domains
+##########################################
+lab_org_name: "Lab Organization"
+lab_location_name: "Lab Location"
+
+################
+# List of users
+################
+foreman_users:
+  - username: labadmin
+    password: change4me
+    mail: shannon.mitchell@rackspace.com
+    admin: yes
+    default_organization: '{{ lab_org_name }}'
+    default_location: '{{ lab_location_name }}'
+    description: "Lab Admin"
+    firstname: Lab
+    lastname: Admin
+
+
+#######################################
+# Openstack project used for instances
+#######################################
+
+openstack_domain_name: "labs-domain"
+openstack_domain_desc: "Shared LAB Project"
+openstack_project_name: "labs-project"
+openstack_project_desc: "Shared Lab Project"
+openstack_project_admin_user: "labs-admin"
+openstack_project_admin_pass: "change4me"
+openstack_project_admin_desc: "LABS Domain Admin User"
+openstack_project_admin_email: "shannon.mitchell@rackspace.com"
+
+    
+########################################################
+# For vlans on ironic nodes, we will have to have a way
+# to pre-define and check-in/check-out the static labs.
+# The static labs, are just a collection of VLANS and 
+# networks set up by netsec that is shared across all 
+# ironic nodes in the phobos cluster.
+########################################################
+static_labs:
+  - domain_name: "lab1.phobos.rpc.rackspace.com"
+    domain_organizations: 
+      - '{{ lab_org_name }}'
+    domain_locations:
+      - '{{ lab_location_name }}'
+    domain_description: "LAB1 Static Domain"
+    domain_parameters:
+      - name: "type"
+        value: "vlan"
+        parameter_type: "string"
+      - name: "in-use"
+        value: "no"
+        parameter_type: "string"
+      - name: "internal_floating_ip"
+        value: "172.20.64.10"
+        parameter_type: "string"
+      # external_floating_ip will need pulled from ironic after/during checkoug
+    domain_subnets:
+      - subnet_name: "LAB1-MGMT"
+        subnet_description: "LAB1 management network with static VLANs"
+        subnet_vlan: 289
+        subnet_type: "IPv4"
+        subnet_network: "172.20.64.0"
+        subnet_mask: "255.255.252.0"
+        subnet_ipam: "Internal DB"
+        subnet_dhcp_from: "172.20.64.50"
+        subnet_dhcp_to: "172.20.64.255"
+        subnet_gateway: "172.20.64.1"
+        subnet_bootmode: "Static"
+      - subnet_name: "LAB1-STOR-MGMT"
+        subnet_description: "LAB1 storage management network with static VLANs"
+        subnet_vlan: 290
+        subnet_type: "IPv4"
+        subnet_network: "172.20.68.0"
+        subnet_mask: "255.255.252.0"
+        subnet_ipam: "Internal DB"
+        subnet_dhcp_from: "172.20.68.50"
+        subnet_dhcp_to: "172.20.68.255"
+        subnet_gateway: "172.20.68.1"
+        subnet_bootmode: "Static"
+      - subnet_name: "LAB1-STORAGE"
+        subnet_description: "LAB1 storage network with static VLANs"
+        subnet_vlan: 291
+        subnet_type: "IPv4"
+        subnet_network: "172.20.72.0"
+        subnet_mask: "255.255.252.0"
+        subnet_ipam: "Internal DB"
+        subnet_dhcp_from: "172.20.72.50"
+        subnet_dhcp_to: "172.20.72.255"
+        subnet_gateway: "172.20.72.1"
+        subnet_bootmode: "Static"
+      - subnet_name: "LAB1-TENANT"
+        subnet_description: "LAB1 tenant network with static VLANs"
+        subnet_vlan: 292
+        subnet_type: "IPv4"
+        subnet_network: "172.20.76.0"
+        subnet_mask: "255.255.252.0"
+        subnet_ipam: "Internal DB"
+        subnet_dhcp_from: "172.20.76.50"
+        subnet_dhcp_to: "172.20.76.255"
+        subnet_gateway: "172.20.76.1"
+        subnet_bootmode: "Static"
+      - subnet_name: "LAB1-LBAAS"
+        subnet_description: "LAB1 lbaas network with static VLANs"
+        subnet_vlan: 293
+        subnet_type: "IPv4"
+        subnet_network: "172.20.80.0"
+        subnet_mask: "255.255.252.0"
+        subnet_ipam: "Internal DB"
+        subnet_dhcp_from: "172.20.80.50"
+        subnet_dhcp_to: "172.20.80.255"
+        subnet_gateway: "172.20.80.1"
+        subnet_bootmode: "Static"
+      - subnet_name: "LAB1-INSIDE-NET"
+        subnet_description: "LAB1 inside net network with static VLANs"
+        subnet_vlan: 294
+        subnet_type: "IPv4"
+        subnet_network: "172.20.84.0"
+        subnet_mask: "255.255.252.0"
+        subnet_ipam: "Internal DB"
+        subnet_dhcp_from: "172.20.84.50"
+        subnet_dhcp_to: "172.20.84.255"
+        subnet_gateway: "172.20.84.1"
+        subnet_bootmode: "Static"
+      - subnet_name: "LAB1-GW-NET"
+        subnet_description: "LAB1 gateway net network with static VLANs"
+        subnet_vlan: 295
+        subnet_type: "IPv4"
+        subnet_network: "172.20.88.0"
+        subnet_mask: "255.255.252.0"
+        subnet_ipam: "Internal DB"
+        subnet_dhcp_from: "172.20.88.50"
+        subnet_dhcp_to: "172.20.88.255"
+        subnet_gateway: "172.20.88.1"
+        subnet_bootmode: "Static"

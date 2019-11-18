@@ -1,0 +1,8 @@
+---
+
+# Include Foreman related prep tasks
+- include: foreman_tasks.yml
+
+# Include Openstack related prep tasks
+- include: openstack_tasks.yml
+

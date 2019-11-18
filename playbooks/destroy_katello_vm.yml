@@ -1,0 +1,7 @@
+---
+- name: Delete the test katello vm and volume
+  hosts: localhost
+  connection: local
+  roles:
+    - destroy_katello_vm
+

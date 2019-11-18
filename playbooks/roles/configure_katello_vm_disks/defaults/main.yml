@@ -1,0 +1,18 @@
+# lvg name
+vg_name: katelloVG00
+
+# lvm name, sizing and mount points
+lv_info:
+  - lv_name: pulpLV
+    lv_size: 60G
+    lv_mount: "/var/lib/pulp"
+    lv_fstype: xfs
+  - lv_name: squidLV
+    lv_size: 60G
+    lv_mount: "/var/lib/squid"
+    lv_fstype: xfs
+  - lv_name: mongodbLV
+    lv_size: 24G
+    lv_mount: "/var/lib/mongodb"
+    lv_fstype: xfs
+

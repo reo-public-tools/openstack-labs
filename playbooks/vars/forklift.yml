@@ -1,0 +1,7 @@
+---
+foreman_repositories_version: "1.23"
+katello_repositories_version: "3.13"
+foreman_installer_admin_password: "changeme"
+foreman_installer_options: 
+  - "--enable-foreman-compute-openstack"
+  - "--enable-foreman-compute-libvirt"

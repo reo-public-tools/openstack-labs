@@ -1,0 +1,4 @@
+- name: Fix the /etc/hosts file for foreman
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ ansible_ssh_host }} {{ inventory_hostname }}.localdomain {{ inventory_hostname }}"

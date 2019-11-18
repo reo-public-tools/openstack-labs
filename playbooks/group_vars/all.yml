@@ -1,0 +1,13 @@
+# Instance Name & data disk name
+# used by the following roles
+#   - create_katello_vm
+#   - configure_katello_vm_disks
+instance_name: "katello-test-vm"
+
+# Data disk name"don't use /dev/vda(root) or /dev/vdb(swap)"
+datadisk_name: "katello-test-vm-data"
+datadisk_device: '/dev/vdc'
+
+
+# Openstackclient client config section/cloud
+cloud: phobos

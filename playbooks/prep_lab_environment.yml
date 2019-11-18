@@ -1,0 +1,20 @@
+---
+- name: Prep the katello environment for labs
+  hosts: localhost
+  connection: local
+  #become: true
+  vars_files:
+    - vars/katello-generated.yml
+    - vars/forklift.yml
+    - vars/lab_prep.yml
+  tags:
+    - prep_lab_environment
+  pre_tasks:
+    - name: Gather some facts to use for the forman modules
+      set_fact:
+        foreman_username: 'admin'
+        foreman_password: '{{ foreman_installer_admin_password }}'
+        foreman_url: 'https://{{ katello_host_ip }}'
+  roles:
+    - prep_lab_environment
+

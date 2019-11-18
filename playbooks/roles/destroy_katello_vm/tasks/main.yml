@@ -1,0 +1,54 @@
+---
+- name: Remove the keypair
+  os_keypair:
+    cloud: '{{ cloud }}'
+    state: absent
+    validate_certs: no
+    name: '{{ keypair }}'
+
+- name: Remove private key
+  file:
+    path: '{{ keypair_dir }}/{{ keypair}}'
+    state: absent 
+
+- name: Remove public key
+  file:
+    path: '{{ keypair_dir }}/{{ keypair}}.pub'
+    state: absent 
+    
+- name: Remove the local inventory file
+  file:
+    path: './inventory/katello_vms.ini'
+    state: absent
+
+- name: Detach the volume from the server
+  os_server_volume:
+    cloud: '{{ cloud }}'
+    state: absent
+    validate_certs: no
+    server: '{{ instance_name }}'
+    volume: '{{ datadisk_name }}'
+    device: '{{ datadisk_device }}'
+  ignore_errors: true
+
+- name: Delete the volume
+  os_volume:
+    cloud: '{{ cloud }}'
+    state: absent
+    validate_certs: no
+    display_name: '{{ datadisk_name }}'
+    size: '{{ datadisk_size }}'
+
+- name: Get the instance info
+  os_server_info:
+    cloud: '{{ cloud }}'
+    server: '{{ instance_name }}'
+    validate_certs: no
+  register: result
+
+- name: Delete the vm
+  os_server:
+    state: absent
+    cloud: '{{ cloud }}'
+    name: '{{ instance_name }}'
+    validate_certs: no

@@ -1,0 +1,89 @@
+---
+#######################
+# Foreman Related Prep
+#######################
+- name: Create a Organization to place labs in
+  theforeman.foreman.foreman_organization:
+    validate_certs: no
+    username: '{{ foreman_username }}'
+    password: '{{ foreman_password }}'
+    server_url: '{{ foreman_url }}'
+    name: '{{ lab_org_name }}'
+    state: present
+
+- name: Create a Location in the new org to place labs in
+  theforeman.foreman.foreman_location:
+    validate_certs: no
+    username: '{{ foreman_username }}'
+    password: '{{ foreman_password }}'
+    server_url: '{{ foreman_url }}'
+    name: '{{ lab_location_name }}'
+    organizations:
+      - '{{ lab_org_name }}'
+
+- name: Create foreman lab users
+  theforeman.foreman.foreman_user:
+    validate_certs: no
+    username: '{{ foreman_username }}'
+    password: '{{ foreman_password }}'
+    server_url: '{{ foreman_url }}'
+    state: present
+    login: '{{ item.username }}'
+    user_password: '{{ item.password }}'
+    mail: '{{ item.mail }}'
+    admin: '{{ item.admin }}'
+    default_organization: '{{ item.default_organization }}'
+    default_location: '{{ item.default_location }}'
+    description: '{{ item.description }}'
+    firstname: '{{ item.firstname }}'
+    lastname: '{{ item.lastname }}'
+    locale: en
+    auth_source: Internal
+  with_items: '{{ foreman_users }}'
+
+- name: Create foreman domains
+  theforeman.foreman.foreman_domain:
+    validate_certs: no
+    username: '{{ foreman_username }}'
+    password: '{{ foreman_password }}'
+    server_url: '{{ foreman_url }}'
+    state: present
+    name: '{{ item.domain_name }}'
+    description: '{{ item.domain_description }}'
+    locations: '{{ item.domain_locations }}'
+    organizations: '{{ item.domain_organizations }}'
+    parameters: '{{ item.domain_parameters }}'
+  with_items: '{{ static_labs }}'
+
+- name: Create domain subnets
+  theforeman.foreman.foreman_subnet:
+    validate_certs: no
+    username: '{{ foreman_username }}'
+    password: '{{ foreman_password }}'
+    server_url: '{{ foreman_url }}'
+    state: present
+    name: '{{ item.1.subnet_name }}'
+    boot_mode: '{{ item.1.subnet_bootmode }}'
+    description: '{{ item.1.subnet_description }}'
+    domains: 
+      - '{{ item.0.domain_name }}'
+    from_ip: '{{ item.1.subnet_dhcp_from }}'
+    to_ip: '{{ item.1.subnet_dhcp_to }}'
+    vlanid: '{{ item.1.subnet_vlan }}'
+    gateway: '{{ item.1.subnet_gateway }}'
+    ipam: '{{ item.1.subnet_ipam }}'
+    mask: '{{ item.1.subnet_mask }}'
+    network: '{{ item.1.subnet_network }}'
+    network_type: '{{ item.1.subnet_type }}'
+    locations: '{{ item.0.domain_locations }}'
+    organizations: '{{ item.0.domain_organizations }}'
+  with_subelements: 
+    - '{{ static_labs }}'
+    - domain_subnets
+
+#########################
+# Openstack related prep
+#########################
+
+# Create the openstack domain with cloud admin
+

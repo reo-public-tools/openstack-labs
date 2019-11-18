@@ -1,0 +1,41 @@
+---
+- name: Install needed packages
+  yum:
+    name: '{{ packages }}'
+    state: latest
+  vars:
+    packages:
+    - lvm2
+
+- name: Create the primary partition
+  parted:
+    device: '{{ datadisk_device }}'
+    number: 1
+    state: present
+
+- name: Create a volume group
+  lvg:
+    vg: '{{ vg_name }}'
+    pvs: '{{ datadisk_device }}1'
+     
+- name: Create logical volumes
+  lvol:
+    vg: '{{ vg_name }}'
+    lv: '{{ item.lv_name }}'
+    size: '{{ item.lv_size }}'
+  with_items: '{{ lv_info }}'
+
+- name: Create the filesystems on the new volumes
+  filesystem:
+    fstype: '{{ item.lv_fstype }}'
+    dev: '/dev/{{ vg_name }}/{{ item.lv_name }}'
+  with_items: '{{ lv_info }}'
+  
+- name: Mount the new volumes
+  mount:
+    path: '{{ item.lv_mount }}'
+    src: '/dev/{{ vg_name }}/{{ item.lv_name }}'
+    state: mounted
+    fstype: '{{ item.lv_fstype }}'
+  with_items: '{{ lv_info }}'
+

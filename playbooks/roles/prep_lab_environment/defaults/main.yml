@@ -1,0 +1,17 @@
+
+# Default lab org and location name
+#   - Each lab will start at the domain scope under this org and location
+lab_org_name: "Lab Organization"
+lab_location_name: "Lab Location"
+
+openstack_domain_name: "labs-domain"
+openstack_domain_desc: "Shared LAB Project"
+openstack_project_name: "labs-project"
+openstack_project_desc: "Shared Lab Project"
+openstack_project_admin_user: "labs-admin"
+openstack_project_admin_pass: "changeme"
+openstack_project_admin_desc: "LABS Domain Admin User"
+openstack_project_admin_email: "shannon.mitchell@rackspace.com"
+
+
+

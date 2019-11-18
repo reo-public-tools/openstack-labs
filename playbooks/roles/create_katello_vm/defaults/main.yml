@@ -1,0 +1,35 @@
+# Cloud to use against your local openstack client config(moved to vars/group_vars/all.yml)
+# cloud: phobos
+
+# Instance Name(moved to vars/group_vars/all.yml)
+# instance_name: "katello-test-vm"
+
+# Glance image to use for the VM
+image: "CentOS 7"
+
+# This is has the following specs based on the foreman docs:
+# - 2 vcpu
+# - 12GB ram
+# - 60GB root disk
+flavor: "katello"
+flavor_vcpus: 2
+flavor_ram: 12288
+flavor_disk: 60
+flavor_ephemeral: 0
+flavor_swap: 2048
+flavor_is_public: true
+
+# ssh keypair name to use for the centos user
+keypair: "katello"
+keypair_dir: "./ssh_keys"
+
+# Neutron network to use
+network: ironic
+
+# Ceph volume to use for data.
+# - 200GB data disk for /var/lib/pulp, /var/lib/squid & /var/lib/mongodb
+datadisk_size: 200
+
+#(moved to vars/group_vars/all.yml)
+# datadisk_name: katello-test-vm-data
+# datadisk_device: '/dev/vdb'
