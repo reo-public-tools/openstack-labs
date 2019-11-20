@@ -1,0 +1,11 @@
+---
+- name: Copy the Rackspace ca certificates over
+  copy:
+    src: '{{ item }}'
+    dest: '/etc/pki/ca-trust/source/anchors/{{ item }}' 
+  with_items:
+    - rs_issuing_ca_1.crt
+    - rs_root_ca_1.crt
+  notify:
+    - Update CA Trust
+    - Restart foreman-proxy

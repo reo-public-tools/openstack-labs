@@ -1,0 +1,8 @@
+---
+- name: Update CA Trust
+  shell: update-ca-trust
+
+- name: Restart foreman-proxy
+  service:
+    name: foreman-proxy
+    state: restarted

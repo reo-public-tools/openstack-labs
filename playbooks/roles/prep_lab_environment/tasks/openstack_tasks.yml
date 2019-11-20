@@ -1,13 +1,4 @@
 ---
-- name: Create an openstack domain for the lab environments
-  os_keystone_domain:
-    state: present
-    cloud: '{{ cloud }}'
-    validate_certs: no
-    name: '{{ openstack_domain_name }}'
-    description: '{{ openstack_domain_desc }}'
-  register: os_domain_ret
-
 - name: Create an openstack project for the lab environments
   os_project:
     state: present
@@ -15,7 +6,7 @@
     validate_certs: no
     name: '{{ openstack_project_name }}'
     description: '{{ openstack_project_desc }}'
-    domain_id: '{{ os_domain_ret.domain.id }}'
+    domain: '{{ openstack_domain_name }}'
   register: os_project_ret
 
 - name: Create the domain admin user
@@ -27,15 +18,22 @@
     password: '{{ openstack_project_admin_pass }}'
     email: '{{ openstack_project_admin_email }}'
     description: '{{ openstack_project_admin_desc }}'
-    domain: '{{ os_domain_ret.domain.id }}'
+    domain: '{{ openstack_domain_name }}'
     default_project: '{{ os_project_ret.project.id }}'
   register: os_user_ret
 
-- name: Set up labs admin as domain and project admin(can't be done with os_user_role at time of writing while setting the user domain)
-  shell: |
-    openstack --os-cloud '{{ cloud }}' role add --domain '{{ os_domain_ret.domain.id }}' --user-domain '{{ os_domain_ret.domain.id }}' --user '{{ os_user_ret.user.id }}' admin --insecure
-    openstack --os-cloud '{{ cloud }}' role add --project '{{ os_project_ret.project.id }}' --user-domain '{{ os_domain_ret.domain.id }}' --user '{{ os_user_ret.user.id }}' admin --insecure
+- name: Set up labs-admin as admin under domain (os_user_role is broken with domain addition)
+  shell: openstack --os-cloud '{{ cloud }}' role add --domain '{{ openstack_domain_name }}' --user '{{ os_user_ret.user.id }}' admin --insecure
 
+- name: Set up labs-admin as admin under project 
+  os_user_role:
+    state: present
+    cloud: '{{ cloud }}'
+    validate_certs: no
+    user: '{{ os_user_ret.user.id }}'
+    role: "admin"
+    project: '{{ openstack_project_name }}'
+    
 - name: Set the project quotas
   os_quota:
     state: present

@@ -26,3 +26,21 @@
   roles:
     - prep_lab_environment
 
+
+- name: Set up openstack cluster specific resources
+  hosts: katello_vms
+  become: true
+  vars_files:
+    - vars/katello-generated.yml
+    - vars/forklift.yml
+    - vars/lab_prep.yml
+  pre_tasks:
+    - name: Gather some facts to use for the forman modules
+      set_fact:
+        foreman_username: 'admin'
+        foreman_password: '{{ foreman_installer_admin_password }}'
+        foreman_url: 'https://{{ katello_host_ip }}'
+  tags:
+    - openstack_compute_resource
+  roles:
+    - openstack_compute_resource

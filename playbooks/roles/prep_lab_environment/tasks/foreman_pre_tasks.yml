@@ -81,3 +81,28 @@
     - '{{ static_labs }}'
     - domain_subnets
 
+- name: Create operating systems
+  theforeman.foreman.foreman_operatingsystem:
+    validate_certs: no
+    username: '{{ foreman_username }}'
+    password: '{{ foreman_password }}'
+    server_url: '{{ foreman_url }}'
+    state: present
+    architectures: '{{ item.architectures }}'
+    description: '{{ item.description }}'
+    family: '{{ item.family }}'
+    major: '{{ item.major }}'
+    minor: '{{ item.minor }}'
+    name: '{{ item.name }}'
+    password_hash: '{{ item.password_hash }}'
+    release_name: '{{ item.release_name }}'
+  with_items: '{{ foreman_operating_systems }}'
+
+- name: Set safe_render mode to false to allow access to subnet parameters
+  theforeman.foreman.foreman_setting:
+    validate_certs: no
+    username: '{{ foreman_username }}'
+    password: '{{ foreman_password }}'
+    server_url: '{{ foreman_url }}'
+    name: "safemode_render"
+    value: false

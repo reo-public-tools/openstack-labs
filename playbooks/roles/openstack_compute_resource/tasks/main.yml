@@ -1,0 +1,114 @@
+---
+- name: Patch the identity endpoint for phobos
+  lineinfile:
+    path: /usr/share/foreman/app/models/compute_resources/foreman/model/openstack.rb
+    regexp: '        :openstack_endpoint_type => "internalURL",' 
+    line: '        :openstack_endpoint_type => "internalURL",'
+    insertafter: '        :openstack_identity_endpoint => url_for_fog,'
+  register: openstack_rb_patch_one
+
+- name: Comment out some boot from volume issues with newton and cinder endpoint issues
+  lineinfile:
+    path: /usr/share/foreman/app/models/compute_resources/foreman/model/openstack.rb
+    regexp: 'volume_client.volumes.delete'
+    line: '      #volume_client.volumes.delete(@boot_vol_id) if args[:boot_from_volume]'
+  register: openstack_rb_patch_two
+
+- name: Comment out some boot from volume issues with newton and cinder endpoint issues
+  lineinfile:
+    path: /usr/share/foreman/app/models/compute_resources/foreman/model/openstack.rb
+    regexp: 'boot_from_volume\(args\)'
+    line: '      #boot_from_volume(args) if Foreman::Cast.to_bool(args[:boot_from_volume])'
+  register: openstack_rb_patch_three
+
+- name: Restart apache only if the file was changed
+  service:
+    name: httpd
+    state: restarted
+  when: openstack_rb_patch_one.changed or openstack_rb_patch_two.changed or openstack_rb_patch_three.changed
+
+- name: Create openstack compute resources
+  shell: |
+    hammer compute-resource info --name phobos-int.rpc.rackspace.com > /dev/null
+    if [ $? !=  0 ]; then
+      /bin/hammer compute-resource create \
+        --description '{{ item.description }}' \
+        --domain '{{ item.domain }}' \
+        --tenant '{{ item.tenant }}' \
+        --location '{{ item.location }}' \
+        --organization '{{ item.organization }}' \
+        --name '{{ item.name }}' \
+        --url '{{ item.url }}' \
+        --provider Openstack \
+        --user '{{ item.user }}' \
+        --password  '{{ item.password }}'
+      if [ $? == 0 ]; then
+        echo "SUCCESS"
+      else
+        echo "FAILURE"
+      fi
+    else
+      echo "SKIPPED"
+    fi
+  register: compute_resource_ret
+  changed_when: compute_resource_ret.stdout == "SUCCESS"
+  failed_when: compute_resource_ret.stdout == "FAILURE"
+  with_items: '{{ foreman_compute_resources_openstack }}'
+
+
+- name: Add images from the environment into the compute resources
+  shell: |
+    hammer compute-resource image info --compute-resource '{{ item.0.name }}' --name '{{ item.1.name }}'  > /dev/null
+    if [ $? !=  0 ]; then
+      /bin/hammer compute-resource image create \
+        --name '{{ item.1.name }}' \
+        --architecture '{{ item.1.architecture }}' \
+        --compute-resource '{{ item.0.name }}' \
+        --operatingsystem '{{ item.1.operatingsystem }}' \
+        --uuid '{{ item.1.uuid }}' \
+        --username '{{ item.1.username }}' \
+        --user-data '{{ item.1.user_data }}'
+      if [ $? == 0 ]; then
+        echo "SUCCESS"
+      else
+        echo "FAILURE"
+      fi
+    else
+      echo "SKIPPED"
+    fi
+  register: compute_resource_image_ret
+  changed_when: compute_resource_image_ret.stdout == "SUCCESS"
+  failed_when: compute_resource_image_ret.stdout == "FAILURE"
+  with_subelements:
+    - '{{ foreman_compute_resources_openstack }}'
+    - images
+
+- name: Update the resources in the db to allow for external networks
+  shell: |
+    if [ ! -e "/root/.pgpass" ]; then
+      awk -F '"' '/password/{print "localhost:5432:foreman:foreman:"$2}' /etc/foreman/database.yml > /root/.pgpass
+      chmod 0600 /root.pgpass
+    fi
+    cat <<EOF > /root/external_network_fix.pgsql
+    \c foreman
+    update compute_resources set attrs = CONCAT(attrs, ':allow_external_network: true
+    ') where name = '{{ item.name }}' and attrs not like '%allow_external_network%';
+    EOF
+    psql -U foreman -h localhost < /root/external_network_fix.pgsql
+  register: ext_net_fix_ret
+  changed_when: "'UPDATE 1' in ext_net_fix_ret.stdout"
+  with_items: '{{ foreman_compute_resources_openstack }}'
+
+
+- name: Add compute profiles
+  theforeman.foreman.foreman_compute_profile:
+    validate_certs: no
+    username: '{{ foreman_username }}'
+    password: '{{ foreman_password }}'
+    server_url: '{{ foreman_url }}'
+    state: present
+    name: '{{ item.name }}'
+    compute_attributes: '{{ item.compute_attributes }}'
+  with_items: '{{ foreman_compute_profiles }}'
+  delegate_to: localhost
+

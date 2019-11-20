@@ -14,4 +14,24 @@ openstack_project_admin_desc: "LABS Domain Admin User"
 openstack_project_admin_email: "shannon.mitchell@rackspace.com"
 
 
+foreman_operating_systems:
+  - name: "ubuntu-xenial"
+    description: "Ubuntu Xenial"
+    family: Debian
+    major: 16
+    minor: 04
+    password_hash: SHA256
+    release_name: 'xenial'
+    architectures:
+      - x86_64
+  - name: "ubuntu-bionic"
+    description: "Ubuntu Bionic"
+    family: Debian
+    major: 18
+    minor: 04
+    password_hash: SHA256
+    release_name: 'bionic'
+    architectures:
+      - x86_64
+
 
