@@ -1,11 +1,13 @@
 ---
 - name: Patch the identity endpoint for phobos
   lineinfile:
-    path: /usr/share/foreman/app/models/compute_resources/foreman/model/openstack.rb
+    path: "/usr/share/foreman/app/models/compute_resources/foreman/model/openstack.rb"
     regexp: '        :openstack_endpoint_type => "internalURL",' 
     line: '        :openstack_endpoint_type => "internalURL",'
     insertafter: '        :openstack_identity_endpoint => url_for_fog,'
   register: openstack_rb_patch_one
+  tags:
+    - patch_endpoint_issues
 
 - name: Comment out some boot from volume issues with newton and cinder endpoint issues
   lineinfile:
@@ -13,6 +15,8 @@
     regexp: 'volume_client.volumes.delete'
     line: '      #volume_client.volumes.delete(@boot_vol_id) if args[:boot_from_volume]'
   register: openstack_rb_patch_two
+  tags:
+    - patch_endpoint_issues
 
 - name: Comment out some boot from volume issues with newton and cinder endpoint issues
   lineinfile:
@@ -20,12 +24,16 @@
     regexp: 'boot_from_volume\(args\)'
     line: '      #boot_from_volume(args) if Foreman::Cast.to_bool(args[:boot_from_volume])'
   register: openstack_rb_patch_three
+  tags:
+    - patch_endpoint_issues
 
 - name: Restart apache only if the file was changed
   service:
     name: httpd
     state: restarted
   when: openstack_rb_patch_one.changed or openstack_rb_patch_two.changed or openstack_rb_patch_three.changed
+  tags:
+    - patch_endpoint_issues
 
 - name: Create openstack compute resources
   shell: |
@@ -54,6 +62,8 @@
   changed_when: compute_resource_ret.stdout == "SUCCESS"
   failed_when: compute_resource_ret.stdout == "FAILURE"
   with_items: '{{ foreman_compute_resources_openstack }}'
+  tags:
+    - create_compute_resources
 
 
 - name: Add images from the environment into the compute resources
@@ -82,6 +92,8 @@
   with_subelements:
     - '{{ foreman_compute_resources_openstack }}'
     - images
+  tags:
+    - create_compute_resource_images
 
 - name: Update the resources in the db to allow for external networks
   shell: |
@@ -98,7 +110,8 @@
   register: ext_net_fix_ret
   changed_when: "'UPDATE 1' in ext_net_fix_ret.stdout"
   with_items: '{{ foreman_compute_resources_openstack }}'
-
+  tags:
+    - external_networks_sql_patch
 
 - name: Add compute profiles
   theforeman.foreman.foreman_compute_profile:
@@ -111,4 +124,6 @@
     compute_attributes: '{{ item.compute_attributes }}'
   with_items: '{{ foreman_compute_profiles }}'
   delegate_to: localhost
+  tags:
+    - create_compute_profiles
 

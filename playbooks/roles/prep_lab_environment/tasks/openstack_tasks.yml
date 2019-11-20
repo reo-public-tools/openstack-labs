@@ -8,8 +8,10 @@
     description: '{{ openstack_project_desc }}'
     domain: '{{ openstack_domain_name }}'
   register: os_project_ret
+  tags:
+    - create_openstack_project
 
-- name: Create the domain admin user
+- name: Create the project admin user
   os_user:
     state: present
     cloud: '{{ cloud }}'
@@ -21,9 +23,13 @@
     domain: '{{ openstack_domain_name }}'
     default_project: '{{ os_project_ret.project.id }}'
   register: os_user_ret
+  tags:
+    - create_user
 
 - name: Set up labs-admin as admin under domain (os_user_role is broken with domain addition)
   shell: openstack --os-cloud '{{ cloud }}' role add --domain '{{ openstack_domain_name }}' --user '{{ os_user_ret.user.id }}' admin --insecure
+  tags:
+    - add_user_roles
 
 - name: Set up labs-admin as admin under project 
   os_user_role:
@@ -33,6 +39,8 @@
     user: '{{ os_user_ret.user.id }}'
     role: "admin"
     project: '{{ openstack_project_name }}'
+  tags:
+    - add_user_roles
     
 - name: Set the project quotas
   os_quota:
@@ -45,6 +53,8 @@
     cores: '-1'
     floating_ips: '-1'
     gigabytes: '-1'
+  tags:
+    - update_project_quotas
     
 - name: Open up the icmp for the labs
   os_security_group_rule:
@@ -55,6 +65,8 @@
     project: '{{ os_project_ret.project.id }}'
     direction: 'ingress'
     protocol: icmp
+  tags:
+    - update_project_security_groups
     
 - name: Open up the all of tcp and udp for the labs
   os_security_group_rule:
@@ -70,4 +82,6 @@
   with_items:
     - tcp
     - udp
+  tags:
+    - update_project_security_groups
 

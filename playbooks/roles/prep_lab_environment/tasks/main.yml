@@ -1,8 +1,29 @@
 ---
 
+# Include tasks to set up rackspace ca certificates on the katelly host
+- include: add_rackspace_ca_certs.yml
+  when: inventory_hostname != 'localhost'
+  become: true
+  tags:
+    - add_rackspace_ca_certs
+
 # Include Foreman related prep tasks
-- include: foreman_pre_tasks.yml
+- include: foreman_tasks.yml
+  when: inventory_hostname == 'localhost'
+  become: false
+  tags:
+    - foreman_tasks
 
 # Include Openstack related prep tasks
 - include: openstack_tasks.yml
+  when: inventory_hostname == 'localhost'
+  become: false
+  tags:
+    - openstack_tasks
 
+# Include Foreman compute resource setup for openstack
+- include: openstack_compute_resources.yml
+  when: inventory_hostname != 'localhost'
+  become: true
+  tags:
+    - openstack_compute_resources

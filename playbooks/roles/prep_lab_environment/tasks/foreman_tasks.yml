@@ -10,6 +10,8 @@
     server_url: '{{ foreman_url }}'
     name: '{{ lab_org_name }}'
     state: present
+  tags:
+    - create_organization
 
 - name: Create a Location in the new org to place labs in
   theforeman.foreman.foreman_location:
@@ -20,6 +22,8 @@
     name: '{{ lab_location_name }}'
     organizations:
       - '{{ lab_org_name }}'
+  tags:
+    - create_location
 
 - name: Create foreman lab users
   theforeman.foreman.foreman_user:
@@ -40,6 +44,8 @@
     locale: en
     auth_source: Internal
   with_items: '{{ foreman_users }}'
+  tags:
+    - create_users
 
 - name: Create foreman domains
   theforeman.foreman.foreman_domain:
@@ -54,6 +60,8 @@
     organizations: '{{ item.domain_organizations }}'
     parameters: '{{ item.domain_parameters }}'
   with_items: '{{ static_labs }}'
+  tags:
+    - create_domains
 
 - name: Create domain subnets
   theforeman.foreman.foreman_subnet:
@@ -80,6 +88,8 @@
   with_subelements: 
     - '{{ static_labs }}'
     - domain_subnets
+  tags:
+    - create_subnets
 
 - name: Create operating systems
   theforeman.foreman.foreman_operatingsystem:
@@ -97,6 +107,8 @@
     password_hash: '{{ item.password_hash }}'
     release_name: '{{ item.release_name }}'
   with_items: '{{ foreman_operating_systems }}'
+  tags:
+    - create_operatingsystems
 
 - name: Set safe_render mode to false to allow access to subnet parameters
   theforeman.foreman.foreman_setting:
@@ -106,3 +118,5 @@
     server_url: '{{ foreman_url }}'
     name: "safemode_render"
     value: false
+  tags:
+    - update_foreman_settings

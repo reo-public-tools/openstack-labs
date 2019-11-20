@@ -1,35 +1,7 @@
 ---
-- name: Add the rackspace ssh keys
-  hosts: katello_vms
-  become: true
-  tags:
-    - add_rackspace_ca_certs
-  roles:
-    - add_rackspace_ca_certs
 
-- name: Prep the katello environment for labs
-  hosts: localhost
-  connection: local
-  #become: true
-  vars_files:
-    - vars/katello-generated.yml
-    - vars/forklift.yml
-    - vars/lab_prep.yml
-  tags:
-    - prep_lab_environment
-  pre_tasks:
-    - name: Gather some facts to use for the forman modules
-      set_fact:
-        foreman_username: 'admin'
-        foreman_password: '{{ foreman_installer_admin_password }}'
-        foreman_url: 'https://{{ katello_host_ip }}'
-  roles:
-    - prep_lab_environment
-
-
-- name: Set up openstack cluster specific resources
-  hosts: katello_vms
-  become: true
+- name: Prep the katello and openstack environments for labs
+  hosts: 'katello_vms:localhost'
   vars_files:
     - vars/katello-generated.yml
     - vars/forklift.yml
@@ -40,7 +12,9 @@
         foreman_username: 'admin'
         foreman_password: '{{ foreman_installer_admin_password }}'
         foreman_url: 'https://{{ katello_host_ip }}'
-  tags:
-    - openstack_compute_resource
+      tags:
+        - always
+      delegate_to: localhost
   roles:
-    - openstack_compute_resource
+    - prep_lab_environment
+
