@@ -116,7 +116,21 @@
     username: '{{ foreman_username }}'
     password: '{{ foreman_password }}'
     server_url: '{{ foreman_url }}'
-    name: "safemode_render"
-    value: false
+    name: '{{ item.key }}'
+    value: '{{ item.value }}'
+  with_items: '{{ foreman_settings }}'
   tags:
     - update_foreman_settings
+
+- name: Add the ip address as a global parameter to use for templating
+  theforeman.foreman.foreman_global_parameter:
+    validate_certs: no
+    username: '{{ foreman_username }}'
+    password: '{{ foreman_password }}'
+    server_url: '{{ foreman_url }}'
+    state: present
+    name: '{{ item.key }}'
+    value: '{{ item.value }}'
+  with_items: '{{ foreman_global_parameters }}'
+  tags:
+    - update_foreman_global_parameters

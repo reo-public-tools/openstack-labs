@@ -27,3 +27,11 @@
   become: true
   tags:
     - openstack_compute_resources
+
+
+# Include Foreman related prep tasks
+- include: provisioning_templates.yml
+  when: inventory_hostname == 'localhost'
+  become: false
+  tags:
+    - provisioning_templates

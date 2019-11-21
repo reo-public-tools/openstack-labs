@@ -35,3 +35,15 @@ foreman_operating_systems:
       - x86_64
 
 
+
+provisioning_template_path: "{{ role_path }}/files/provisioning_templates"
+
+
+foreman_settings:
+  - key: "safemode_render"
+    value: false
+
+foreman_global_parameters:
+  - key: "foreman_server_ip"
+    value: '{{ katello_host_ip }}'
+

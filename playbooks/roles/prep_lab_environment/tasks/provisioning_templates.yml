@@ -1,0 +1,33 @@
+- name: Upload the default userdata template
+  theforeman.foreman.foreman_provisioning_template:
+    validate_certs: no
+    username: '{{ foreman_username }}'
+    password: '{{ foreman_password }}'
+    server_url: '{{ foreman_url }}'
+    state: present
+    name: "custom-baremetal-userdata"
+    file_name: "{{ provisioning_template_path }}/custom-baremetal-userdata.erb"
+    operatingsystems: '{{ foreman_provisioning_template_operating_systems }}'
+    locations:
+      - "Default Location"
+      - '{{ lab_location_name }}'
+    organizations:
+      - "Default Organization"
+      - '{{ lab_org_name }}'
+  tags:
+    - configure_provisioning_templates
+
+
+- name: Associate the userdata template with the list of operating systems.
+  theforeman.foreman.foreman_os_default_template:
+    validate_certs: no
+    username: '{{ foreman_username }}'
+    password: '{{ foreman_password }}'
+    server_url: '{{ foreman_url }}'
+    state: present
+    operatingsystem: '{{ item }}'
+    template_kind: "user_data"
+    provisioning_template: "custom-baremetal-userdata"
+  with_items: '{{ foreman_provisioning_template_operating_systems }}'
+  tags:
+    - configure_provisioning_templates

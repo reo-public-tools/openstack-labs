@@ -169,6 +169,11 @@ foreman_compute_resources_openstack:
         username: "ubuntu"
         user_data: true
 
+# List used to associate custom provisioning templates to
+foreman_provisioning_template_operating_systems:
+  - "Ubuntu Xenial"
+  - "Ubuntu Bionic"
+
 
 ##################################################################
 # Info for compute profiles
