@@ -1,21 +1,22 @@
 package theforeman
 
 import (
-     "os"
-     "fmt"
-     "log"
-     "bufio"
-     "unsafe"
-     "regexp"
-     "syscall"
-     "strings"
-     "net/http"
-     "io/ioutil"
-     "crypto/tls"
+    "os"
+    "fmt"
+    "log"
+    "bufio"
+//    "errors"
+    "regexp"
+    "unsafe"
+    "syscall"
+    "strings"
+    "net/http"
+    "io/ioutil"
+    "crypto/tls"
 )
 
 // Allow for disabling of terminal echo while asking for password
-func terminalEcho(show bool) {
+func terminalEcho(show bool) (error) {
     var termios = &syscall.Termios{}
     var fd = os.Stdout.Fd()
 
@@ -32,32 +33,40 @@ func terminalEcho(show bool) {
 
     _, _, err = syscall.Syscall(syscall.SYS_IOCTL, fd, uintptr(syscall.TCSETS), uintptr(unsafe.Pointer(termios)))
     if err != 0 {
-        log.Fatal(err)
+        return err
     }
+
+    return nil
 }
 
 // Prompt user for credentials
-func promptUserForCredentials() (string, string) {
+func promptUserForCredentials() (string, string, error) {
 
     // Request username and password from the user
     reader := bufio.NewReader(os.Stdin)
 
-    fmt.Print("\n\nRackspace SSO username: ")
+    fmt.Print("\n\nTheForeman username: ")
     username, _ := reader.ReadString('\n')
     username = strings.Replace(username, "\n", "", -1)
 
-    fmt.Print("Rackspace SSO password: ")
-    terminalEcho(false)
+    fmt.Print("TheForeman password: ")
+    err := terminalEcho(false)
+    if err != nil {
+        return "", "", err
+    }
     password, _ := reader.ReadString('\n')
     password = strings.Replace(password, "\n", "", -1)
-    terminalEcho(true)
+    err = terminalEcho(true)
+    if err != nil {
+        return "", "", err
+    }
     fmt.Printf("\n\n")
 
-    return username, password
+    return username, password, nil
 }
 
 // Save theforeman session to ~/.theforeman-session for future runs
-func saveTheForemanSession(session string) {
+func saveTheForemanSession(session string) error {
 
     // Get the home directory and set the full path for the file
     var home string = os.Getenv("HOME")
@@ -66,13 +75,14 @@ func saveTheForemanSession(session string) {
     // Make sure the file exists
     err := ioutil.WriteFile(sessionFile, []byte(session), 0600)
     if err != nil {
-        log.Fatal(err)
+        return err
     }
 
+    return nil
 }
 
 // Check for and test an existing session
-func checkExistingTheForemanSession() (bool, string) {
+func checkExistingTheForemanSession() (string, error) {
 
     // Get the home directory and set the full path for the file
     var home string = os.Getenv("HOME")
@@ -81,19 +91,19 @@ func checkExistingTheForemanSession() (bool, string) {
     // See if token file exists
     _, err := os.Stat(sessionFile)
     if os.IsNotExist(err) {
-        return false, "notfound"
+        return "notfound", nil
     }
 
     // Pull the token from the file if we got this far
     sessionbyte, err := ioutil.ReadFile(sessionFile)
     if err != nil {
-        log.Fatal(err)
+        return "notfound", err
     }
-    return true, string(sessionbyte)
+    return string(sessionbyte), nil
 }
 
 // Check the if the session is valid
-func isSessionValid(url string, session string) bool {
+func isSessionValid(url string, session string) (bool, error) {
 
     // Rackspace Identity URL for token validation
     var testurl string = fmt.Sprintf("%s/api/v2/status", url)
@@ -101,7 +111,7 @@ func isSessionValid(url string, session string) bool {
     // Set up the basic request from the url and body
     req, err := http.NewRequest("GET", testurl, nil)
     if err != nil {
-        log.Fatal(err)
+        return false, err
     }
 
     // Make sure we are using the proper content type for the configs api
@@ -120,28 +130,38 @@ func isSessionValid(url string, session string) bool {
     client := &http.Client{Transport: tr}
     resp, err := client.Do(req)
     if err != nil {
-        return false
+        return false, err
     }
     defer resp.Body.Close()
 
     // Print out the results
-    return resp.Status == "200 OK"
+    return resp.Status == "200 OK", nil
 
 }
 
-func TheForemanLogin(url string) (string) {
+func TheForemanLogin(url string) (string, error) {
 
     // Check for and pull the existing token from the token file
-    sessionfound, session := checkExistingTheForemanSession()
-
-    if sessionfound {
-        if isSessionValid(url, session) {
-            return session
+    session, err := checkExistingTheForemanSession()
+    if err != nil {
+        return "invalid", err
+    } else {
+        isvalid, err := isSessionValid(url, session)
+        if err != nil {
+            return "invalid", err
+        } else {
+            if isvalid {
+                return session, nil
+            }
         }
     }
 
+
     // Prompt the user for some credentials 
-    username, password := promptUserForCredentials()
+    username, password, err := promptUserForCredentials()
+    if err != nil {
+        return "invalid", err
+    }
 
     // Set the login url
     var testurl string = fmt.Sprintf("%s/api/v2/status", url)
@@ -149,7 +169,7 @@ func TheForemanLogin(url string) (string) {
     // Set up the basic request from the url and body
     req, err := http.NewRequest("GET", testurl, nil)
     if err != nil {
-        log.Fatal(err)
+        return "invalid", err
     }
 
     // Set up basic auth
@@ -168,7 +188,7 @@ func TheForemanLogin(url string) (string) {
     client := &http.Client{Transport: tr}
     resp, err := client.Do(req)
     if err != nil {
-            log.Fatal(err)
+        return "invalid", err
     }
     defer resp.Body.Close()
 
@@ -186,7 +206,10 @@ func TheForemanLogin(url string) (string) {
     fmt.Println("resp Body: ", string(body))
 
     // Save the session after pulling a new one
-    saveTheForemanSession(session)
+    err = saveTheForemanSession(session)
+    if err != nil {
+        return "invalid", err
+    }
 
-    return session
+    return session, nil
 }
