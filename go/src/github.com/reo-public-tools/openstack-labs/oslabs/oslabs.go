@@ -70,7 +70,14 @@ func main() {
 
     } // End "for_, domain := range domains {"
 
-    theforeman.CheckOutVLANDomain(url, session, curdomaininfo.ID)
-    theforeman.ReleaseVLANDomain(url, session, curdomaininfo.ID)
+    err = theforeman.CheckOutVLANDomain(url, session, curdomaininfo.ID)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    err = theforeman.ReleaseVLANDomain(url, session, curdomaininfo.ID)
+    if err != nil {
+        log.Fatal(err)
+    }
 
 }
