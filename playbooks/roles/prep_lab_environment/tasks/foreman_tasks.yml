@@ -131,6 +131,8 @@
     state: present
     name: '{{ item.key }}'
     value: '{{ item.value }}'
-  with_items: '{{ foreman_global_parameters }}'
+  with_items: 
+    - '{{ foreman_global_parameters }}'
+    - '{{ additional_foreman_global_parameters }}'
   tags:
     - update_foreman_global_parameters

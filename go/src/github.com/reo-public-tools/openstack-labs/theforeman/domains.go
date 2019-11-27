@@ -231,7 +231,6 @@ func SetDomainParameter(url string, session string, domainid int, paramkey strin
     pExists := 0
     for _, parameter := range curdomaininfo.Parameters {
         if parameter.Name == paramkey {
-            fmt.Printf("parameter %s exists\n", paramkey)
             pExists = 1
         }
     }

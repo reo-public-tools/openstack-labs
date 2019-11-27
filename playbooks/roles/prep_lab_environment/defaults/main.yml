@@ -47,3 +47,6 @@ foreman_global_parameters:
   - key: "foreman_server_ip"
     value: '{{ katello_host_ip }}'
 
+# Allow to define additional global parameters for lab environments
+additional_foreman_global_parameters: []
+

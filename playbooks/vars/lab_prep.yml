@@ -5,6 +5,25 @@
 lab_org_name: "Lab Organization"
 lab_location_name: "Lab Location"
 
+
+#######################
+# Base domain name
+#######################
+lab_base_domain_name: "phobos.rpc.rackspace.com"
+
+
+###############################################################
+# Set up some global parameters to be used for domain creation
+###############################################################
+
+additional_foreman_global_parameters:
+  - key: "lab_org_name"
+    value: '{{ lab_org_name }}'
+  - key: "lab_location_name"
+    value: '{{ lab_location_name }}'
+  - key: "lab_base_domain_name"
+    value: '{{ lab_base_domain_name }}'
+
 ################
 # List of users
 ################
@@ -42,7 +61,7 @@ openstack_project_admin_email: "shannon.mitchell@rackspace.com"
 # ironic nodes in the phobos cluster.
 ########################################################
 static_labs:
-  - domain_name: "lab1.phobos.rpc.rackspace.com"
+  - domain_name: "lab1.{{ base_domain_name }}"
     domain_organizations: 
       - '{{ lab_org_name }}'
     domain_locations:
