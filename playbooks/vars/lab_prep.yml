@@ -23,6 +23,14 @@ additional_foreman_global_parameters:
     value: '{{ lab_location_name }}'
   - key: "lab_base_domain_name"
     value: '{{ lab_base_domain_name }}'
+  - key: "multicast_group_base"
+    value: "239.1.33"
+  - key: "vxlan_network_prefix"
+    value: "172.22"
+  - key: "vxlan_netmask"
+    value: "255.255.252.0"
+  - key: "vxlan_third_octet_step"
+    value: 4
 
 ################
 # List of users

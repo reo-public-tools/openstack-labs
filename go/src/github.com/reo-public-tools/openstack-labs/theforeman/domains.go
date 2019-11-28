@@ -278,3 +278,36 @@ func SetDomainParameter(url string, session string, domainid int, paramkey strin
 
 }
 
+
+func GetDomainsWithDetails(url string, session string) ([]DomainInfo, error) {
+
+    // List to return
+    domainInfoList := []DomainInfo{}
+
+    // Get a full foreman domain listing
+    domains, err := GetDomains(url, session)
+    if err != nil {
+        return domainInfoList, err
+    }
+
+    // Parse through the listing and get the detailed domain for each
+    for _, domain := range domains {
+
+        // Ignore the default domain
+        if domain.Name == "localdomain" {
+            continue
+        }
+
+        // Get the details for the current domain
+        curDomainInfo, err := GetDomainDetails(url, session, domain.ID)
+        if err != nil {
+            return domainInfoList, err
+        }
+
+        // Append the domain info to the list to return
+        domainInfoList = append(domainInfoList, curDomainInfo)
+
+    }
+
+    return domainInfoList, nil
+}

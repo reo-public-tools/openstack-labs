@@ -2,12 +2,26 @@ package theforeman
 
 import (
     "fmt"
+    "time"
     "errors"
+    "strconv"
     "strings"
+    "math/rand"
 )
 
 const domainNamePrefix = "lab"
 const maxLabs = 50
+
+
+type GlobalParameters struct {
+        LabOrgName          string
+        LabLocationName     string
+        LabBaseDomainName   string
+        MulticastGroupBase  string
+        VXLANNetworkPrefix  string
+        VXLANNetmask        string
+        VXLANThirdOctetStep int
+}
 
 func CreateDynamicLab(url string, session string) (error) {
 
@@ -18,24 +32,33 @@ func CreateDynamicLab(url string, session string) (error) {
     }
 
     // Set some variables based on the parameters
-    baseDomain := ""
-    labOrg := ""
-    labLoc := ""
+    globalParams := GlobalParameters{}
     for _, parameter := range commonParameters {
         switch parameter.Name {
             case "lab_base_domain_name":
-                baseDomain = parameter.Value
+                globalParams.LabBaseDomainName = parameter.Value
             case "lab_org_name":
-                labOrg = parameter.Value
+                globalParams.LabOrgName = parameter.Value
             case "lab_location_name":
-                labLoc = parameter.Value
+                globalParams.LabLocationName = parameter.Value
+            case "multicast_group_base":
+                globalParams.MulticastGroupBase = parameter.Value
+            case "vxlan_network_prefix":
+                globalParams.VXLANNetworkPrefix = parameter.Value
+            case "vxlan_netmask":
+                globalParams.VXLANNetmask = parameter.Value
+            case "vxlan_third_octet_step":
+                globalParams.VXLANThirdOctetStep, err = strconv.Atoi(parameter.Value)
+                if err != nil {
+                    return err
+                }
             default:
                 continue
         }
     }
 
     // Make call to create the domain in foreman
-    err = CreateDynamicLabDomain(url, session, baseDomain, labOrg, labLoc)
+    err = CreateDynamicLabDomain(url, session, globalParams)
     if err != nil {
         return err
     }
@@ -43,13 +66,23 @@ func CreateDynamicLab(url string, session string) (error) {
     return nil
 }
 
-func CreateDynamicLabDomain(url string, session string, baseDomain string, labOrg string, labLoc string) (error) {
+func CreateDynamicLabDomain(url string, session string, globalParams GlobalParameters) (error) {
 
     // Find an available dynamic lab domain slot
-    domainName, domainIndex, err := FindAvailableLabSlot(url, session, baseDomain)
+    domainName, domainIndex, err := FindAvailableLabSlot(url, session, globalParams.LabBaseDomainName)
     if err != nil {
         return err
     }
+
+    // Find a free multicast group
+    multicastGroup, err := FindAvailableMulticastGroup(url, session, globalParams.MulticastGroupBase)
+    if err != nil {
+        return err
+    }
+    fmt.Printf("Multicast group %s\n", multicastGroup)
+
+    // Request new external and internal haproxy/keepalived router ids
+    // These should all be unique on a flat network.
 
     fmt.Printf("Creating domain %s with index of %d\n", domainName, domainIndex)
     description := fmt.Sprintf("%s%d Dynamic Domain", strings.ToUpper(domainNamePrefix), domainIndex)
@@ -104,5 +137,62 @@ func FindAvailableLabSlot(url string, session string, baseDomain string) (string
     } // End "for domainIndex <= maxLabs {"
 
     return "", 0, errors.New("We hit the max lab limit without finding an available slow")
+
+}
+
+
+func FindAvailableMulticastGroup(url string, session string, multicastGroupBase string) (string, error) {
+
+    mcreturn := ""
+
+    // Get a full foreman domain listing
+    domains, err := GetDomainsWithDetails(url, session)
+    if err != nil {
+        return "", err
+    }
+
+    // Seed the random number generator
+    rand.Seed(time.Now().UnixNano())
+    min := 1
+    max := 254
+
+    // Generate random group numbers and check it against the domain parameters
+    isFreeForUse := false
+    for !isFreeForUse  {
+
+        // Generate a random number and define a new mc group
+        randomNum := rand.Intn(max - min + 1) + min
+        mcreturn = fmt.Sprintf("%s.%d", multicastGroupBase, randomNum)
+
+        // Set it free here as it will be marked false if a domain has it.
+        isFreeForUse = true
+
+        // Parse through the domain listing to see if its in use
+        for _, domain := range domains {
+
+            // Skip any with no parameters
+            if len(domain.Parameters) == 0 {
+                continue
+            }
+
+            // Loop over the parameters
+            for _, parameter := range domain.Parameters {
+
+                // Skip over non-vxlan domains
+                if parameter.Name == "type" && parameter.Value != "vxlan"{
+                    break
+                }
+
+                // Mark it as not free for use so a new number is generated
+                if parameter.Name == "multicast_group" && parameter.Value == mcreturn {
+                    isFreeForUse = false
+                }
+            }
+
+        } // end "for _, domain := range domains {"
+
+    } // end "for isFreeForUse  {"
+
+    return mcreturn, nil
 
 }
