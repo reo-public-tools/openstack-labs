@@ -39,6 +39,7 @@ func main() {
 
 
     */
+
     err = theforeman.CreateDynamicLab(url, session)
     if err != nil {
         log.Fatal(err)
@@ -48,8 +49,16 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Println("finished")
+/*
 
+    err = theforeman.DeleteDynamicLab(url, session, "lab3.phobos.rpc.rackspace.com")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+*/
+
+    fmt.Println("finished")
 
 
 }

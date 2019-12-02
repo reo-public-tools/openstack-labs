@@ -286,7 +286,7 @@ func SetDomainParameter(url string, session string, domainid int, paramkey strin
 
     // Read in the body and check status
     body, _ := ioutil.ReadAll(resp.Body)
-    if resp.StatusCode != 200 {
+    if !(resp.StatusCode == 200 || resp.StatusCode == 201) {
         return errors.New(string(body))
     }
 

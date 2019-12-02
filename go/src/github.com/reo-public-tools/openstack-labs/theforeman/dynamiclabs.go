@@ -65,7 +65,6 @@ func CreateDynamicLab(url string, session string) (error) {
     if err != nil {
         return err
     }
-    fmt.Println(domainInfo)
 
     // Make the call to create the vxlan networks for the new domain
     err = CreateVXLANSubnets(url, session, domainInfo, globalParams)
@@ -74,6 +73,10 @@ func CreateDynamicLab(url string, session string) (error) {
     }
 
     // Make the call to create an internal floating ip
+    err = AssignInternalFloatingIP(url, session, domainInfo.Name, "MGMT", 10, "")
+    if err != nil {
+        return err
+    }
 
     return nil
 }
@@ -356,9 +359,6 @@ func CreateVXLANSubnets(url string, session string, domainInfo Domain, globalPar
     // Use the same domain prefix for the subnets
     subnetPrefix := strings.ToUpper(strings.Split(domainInfo.Name, ".")[0])
 
-    fmt.Printf("Using subnet prefix of %s\n", subnetPrefix)
-    fmt.Printf("Using vxlan id of %d\n", vxlanID)
-
     // Start creating the subnets
     curOffset := 0
     for _, network := range globalParams.VXLANNetworks {
@@ -415,7 +415,6 @@ func DeleteVXLANSubnets(url string, session string, domainName string) (error) {
 
     // Loop over subnets and remove domain associations
     for _, subnet := range domainDetails.Subnets {
-        fmt.Printf("Subnet: %s\n", subnet.Name)
 
         // Remove domain associations
         err := RemoveSubnetFromDomain(url, session, subnet.ID)
@@ -432,4 +431,57 @@ func DeleteVXLANSubnets(url string, session string, domainName string) (error) {
     }
 
     return nil
+}
+
+
+func AssignInternalFloatingIP(url string, session string, domainName string, netSuffix string, netOffset int, overrideIP string) (error) {
+
+    // init some vars
+    internalFloatingIP := ""
+
+    // Get a fresh set of domain details
+    domainDetails, err := GetDomainDetails(url, session, domainName)
+    if err != nil {
+        return err
+    }
+
+    if overrideIP != "" {
+
+        internalFloatingIP = overrideIP
+
+    } else {
+
+
+        // Set up string to match
+        subnetPrefix := strings.ToUpper(strings.Split(domainDetails.Name, ".")[0])
+        subnetName := fmt.Sprintf("%s-%s", subnetPrefix, netSuffix)
+
+        // Loop over subnets to find a match
+        for _, subnet := range domainDetails.Subnets {
+            if subnet.Name == subnetName {
+                netPart := strings.Split(subnet.NetworkAddress, "/")[0]
+                octList := strings.Split(netPart, ".")
+                netStart := strings.Join(octList[0:3], ".")
+                netEnd, err := strconv.Atoi(octList[3])
+                if err != nil {
+                    return err
+                }
+                internalFloatingIP = fmt.Sprintf("%s.%d", netStart, netEnd + netOffset)
+                break
+            }
+        }
+
+    }
+
+    if internalFloatingIP == "" {
+        return fmt.Errorf("Unable to assign internal floating ip for domain %s\n", domainName)
+    }
+
+    err = SetDomainParameter(url, session, domainDetails.ID, "internal_floating_ip", internalFloatingIP)
+    if err != nil {
+        return err
+    }
+
+    return nil
+
 }
