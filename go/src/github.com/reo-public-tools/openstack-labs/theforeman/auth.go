@@ -202,8 +202,8 @@ func TheForemanLogin(url string) (string, error) {
     fmt.Println("Cookie: ", session)
 
     // Print out the body
-    body, _ := ioutil.ReadAll(resp.Body)
-    fmt.Println("resp Body: ", string(body))
+    //body, _ := ioutil.ReadAll(resp.Body)
+    //fmt.Println("resp Body: ", string(body))
 
     // Save the session after pulling a new one
     err = saveTheForemanSession(session)

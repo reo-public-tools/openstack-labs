@@ -31,6 +31,8 @@ additional_foreman_global_parameters:
     value: "255.255.252.0"
   - key: "vxlan_third_octet_step"
     value: 4
+  - key: "vxlan_networks"
+    value: "mgmt,stor-mgmt,storage,tenant,lbaas,inside-net,gw-net"
 
 ################
 # List of users

@@ -81,6 +81,22 @@ type Organizations struct {
 	Description string `json:"description"`
 }
 
+// Structures used when creating a new domain
+type DomainPostData struct {
+        OrganizationID int           `json:"organization_id"`
+        LocationID     int           `json:"location_id"`
+        Domain         NewDomainData `json:"domain"`
+}
+type DomainParametersAttributes struct {
+        Name  string `json:"name"`
+        Value string `json:"value"`
+}
+type NewDomainData struct {
+        Name                       string                       `json:"name"`
+        Fullname                   string                       `json:"fullname"`
+        DomainParametersAttributes []DomainParametersAttributes `json:"domain_parameters_attributes"`
+}
+
 
 func GetDomains(url string, session string) ([]Domain, error) {
 
@@ -160,13 +176,13 @@ func GetDomains(url string, session string) ([]Domain, error) {
 }
 
 
-func GetDomainDetails(url string, session string, domainid int) (DomainInfo, error) {
+func GetDomainDetails(url string, session string, domainid interface{}) (DomainInfo, error) {
 
     // Init some vars
     domainInfo := DomainInfo{}
 
     // Set the query url
-    var requesturl string = fmt.Sprintf("%s/api/domains/%d", url, domainid)
+    var requesturl string = fmt.Sprintf("%s/api/domains/%v", url, domainid)
 
     // Set up the basic request from the url and body
     req, err := http.NewRequest("GET", requesturl, nil)
@@ -310,4 +326,102 @@ func GetDomainsWithDetails(url string, session string) ([]DomainInfo, error) {
     }
 
     return domainInfoList, nil
+}
+
+func CreateNewDomain(url string, session string, domainData DomainPostData) (Domain, error) {
+
+    // Init the query results var
+    var queryResults Domain
+
+    // Set the query url assuming the key doesn't exist
+    var requesturl string = fmt.Sprintf("%s/api/domains/", url)
+
+    // Convert data to json
+    postData, err := json.Marshal(domainData)
+    if err != nil {
+        return Domain{}, err
+    }
+
+    // Set up the basic request from the url and body
+    req, err := http.NewRequest("POST", requesturl, bytes.NewBufferString(string(postData)))
+    if err != nil {
+        return Domain{}, err
+    }
+
+    // Make sure we are using the proper content type for the configs api
+    req.Header.Set("Content-Type", "application/json")
+    req.Header.Set("Accept", "application/json,version=2")
+
+    // Set the session Cookie header
+    req.Header.Set("Cookie", fmt.Sprintf("_session_id=%s", session))
+
+    // Disable tls verify
+    tr := &http.Transport{
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+    }
+
+    // Set up the http client and do the request
+    client := &http.Client{Transport: tr}
+    resp, err := client.Do(req)
+    if err != nil {
+        return Domain{}, err
+    }
+    defer resp.Body.Close()
+
+    // Read in the body and check status
+    body, _ := ioutil.ReadAll(resp.Body)
+    if resp.StatusCode != 201 {
+        return Domain{}, errors.New(string(body))
+    }
+
+    // Convert the body to a byte array
+    bytes := []byte(body)
+
+    // Unmarshall the json byte array into a struct
+    err = json.Unmarshal(bytes, &queryResults)
+    if err != nil {
+        return Domain{}, err
+    }
+
+    return queryResults, nil
+}
+
+func DeleteDomain(url string, session string, domainName string) (error) {
+
+    // Set the query url assuming the key doesn't exist
+    var requesturl string = fmt.Sprintf("%s/api/domains/%s", url, domainName)
+
+    // Set up the basic request from the url and body
+    req, err := http.NewRequest("DELETE", requesturl, nil)
+    if err != nil {
+        return err
+    }
+
+    // Make sure we are using the proper content type for the configs api
+    req.Header.Set("Content-Type", "application/json")
+    req.Header.Set("Accept", "application/json,version=2")
+
+    // Set the session Cookie header
+    req.Header.Set("Cookie", fmt.Sprintf("_session_id=%s", session))
+
+    // Disable tls verify
+    tr := &http.Transport{
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+    }
+
+    // Set up the http client and do the request
+    client := &http.Client{Transport: tr}
+    resp, err := client.Do(req)
+    if err != nil {
+        return err
+    }
+    defer resp.Body.Close()
+
+    // Read in the body and check status
+    body, _ := ioutil.ReadAll(resp.Body)
+    if resp.StatusCode != 200 {
+        return errors.New(string(body))
+    }
+
+    return nil
 }

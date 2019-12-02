@@ -18,6 +18,7 @@ func main() {
     }
 
     // Find a static vlan backed domain available for use
+    /*
     curdomaininfo, err := theforeman.FindAvailableVLANDomain(url, session)
     fmt.Printf("Found available domain %s to check out\n", curdomaininfo.Name)
     if err != nil {
@@ -37,10 +38,18 @@ func main() {
     }
 
 
+    */
     err = theforeman.CreateDynamicLab(url, session)
     if err != nil {
         log.Fatal(err)
     }
+
+    err = theforeman.DeleteDynamicLab(url, session, "lab2.phobos.rpc.rackspace.com")
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println("finished")
+
 
 
 }
