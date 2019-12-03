@@ -26,9 +26,14 @@ type GlobalParameters struct {
 
 func CreateDynamicLab(url string, session string) (error) {
 
+    sysLogPrefix := "theforeman(package).dynamiclabs(file).CreateDynamicLab(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Creating a dynamic(vxlan) backed lab.", sysLogPrefix))
+
+
     // Get a list of common parameters that will be used when creating a domain
     commonParameters, err := GetCommonParameters(url, session)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return err
     }
 
@@ -63,18 +68,21 @@ func CreateDynamicLab(url string, session string) (error) {
     // Make call to create the domain in foreman
     domainInfo, err := CreateDynamicLabDomain(url, session, globalParams)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return err
     }
 
     // Make the call to create the vxlan networks for the new domain
     err = CreateVXLANSubnets(url, session, domainInfo, globalParams)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return err
     }
 
     // Make the call to create an internal floating ip
     err = AssignInternalFloatingIP(url, session, domainInfo.Name, "MGMT", 10, "")
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return err
     }
 
@@ -83,15 +91,20 @@ func CreateDynamicLab(url string, session string) (error) {
 
 func DeleteDynamicLab(url string, session string, domainName string) (error) {
 
+    sysLogPrefix := "theforeman(package).dynamiclabs(file).DeleteDynamicLab(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Deleting a dynamic(vxlan) backed lab %s.", sysLogPrefix, domainName))
+
     // Delete the subnets for this domain
     err := DeleteVXLANSubnets(url, session, domainName)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return err
     }
 
     // Delete the domain
     err = DeleteDomain(url, session, domainName)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return err
     }
 
@@ -100,15 +113,20 @@ func DeleteDynamicLab(url string, session string, domainName string) (error) {
 
 func CreateDynamicLabDomain(url string, session string, globalParams GlobalParameters) (Domain, error) {
 
+    sysLogPrefix := "theforeman(package).dynamiclabs(file).CreateDynamicLabDomain(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Creating domain for a dynamic(vxlan) backed lab.", sysLogPrefix))
+
     // Find an available dynamic lab domain slot
     domainName, domainIndex, err := FindAvailableLabSlot(url, session, globalParams.LabBaseDomainName)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return Domain{}, err
     }
 
     // Find a free multicast group
     multicastGroup, err := FindAvailableMulticastGroup(url, session, globalParams.MulticastGroupBase)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return Domain{}, err
     }
 
@@ -116,6 +134,7 @@ func CreateDynamicLabDomain(url string, session string, globalParams GlobalParam
     // These should all be unique on a flat network.
     externalVRID, internalVRID, err := FindAvailableVRIDs(url, session)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return Domain{}, err
     }
 
@@ -125,12 +144,14 @@ func CreateDynamicLabDomain(url string, session string, globalParams GlobalParam
     // Convert the location name to id for the domain creation
     locationID, err := ConvLocNameToID(url, session, globalParams.LabLocationName)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
        return Domain{}, err
     }
 
     // Convert the organization name to id for the domain creation
     organizationID, err := ConvOrgNameToID(url, session, globalParams.LabOrgName)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
        return Domain{}, err
     }
 
@@ -154,18 +175,22 @@ func CreateDynamicLabDomain(url string, session string, globalParams GlobalParam
     // Make the call to actually create the domain in theForeman
     domainInfo, err := CreateNewDomain(url, session, newDomainStruct)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return Domain{}, err
     }
-
 
     return domainInfo, nil
 }
 
 func FindAvailableLabSlot(url string, session string, baseDomain string) (string, int, error) {
 
+    sysLogPrefix := "theforeman(package).dynamiclabs(file).FindAvailableLabSlot(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Finding free domain for a dynamic(vxlan) for base domain %s", sysLogPrefix, baseDomain))
+
     // Get a full foreman domain listing
     domains, err := GetDomains(url, session)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return "", 0, err
     }
 
@@ -206,12 +231,15 @@ func FindAvailableLabSlot(url string, session string, baseDomain string) (string
 
     } // End "for domainIndex <= maxLabs {"
 
-    return "", 0, errors.New("We hit the max lab limit without finding an available slow")
+    return "", 0, errors.New(fmt.Sprintf("%s We hit the max lab limit without finding an available slot.", sysLogPrefix))
 
 }
 
 
 func FindAvailableMulticastGroup(url string, session string, multicastGroupBase string) (string, error) {
+
+    sysLogPrefix := "theforeman(package).dynamiclabs(file).FindAvailableMulticastGroup(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Finding free multicast group using base %s for a new dynamic(vxlan) domain. %s", sysLogPrefix, multicastGroupBase))
 
     // Init the return value
     mcreturn := ""
@@ -222,6 +250,7 @@ func FindAvailableMulticastGroup(url string, session string, multicastGroupBase 
     // Get a full foreman domain listing
     domains, err := GetDomainsWithDetails(url, session)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return "", err
     }
 
@@ -264,6 +293,7 @@ func FindAvailableMulticastGroup(url string, session string, multicastGroupBase 
         }
     }
 
+    _ = sysLog.Debug(fmt.Sprintf("%s Found free multicast group %s.", sysLogPrefix, mcreturn))
     return mcreturn, nil
 
 }
@@ -273,6 +303,9 @@ func FindAvailableMulticastGroup(url string, session string, multicastGroupBase 
 // and returns two integers that can be used for either.
 func FindAvailableVRIDs(url string, session string) (int, int, error) {
 
+    sysLogPrefix := "theforeman(package).dynamiclabs(file).FindAvailableVRIDs(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Finding free VRIDs for a new dynamic(vxlan) domain.", sysLogPrefix))
+
     externalVRID := 0
     internalVRID := 0
     usedVRIDs := []int{}
@@ -280,6 +313,7 @@ func FindAvailableVRIDs(url string, session string) (int, int, error) {
     // Get a full foreman domain listing
     domains, err := GetDomainsWithDetails(url, session)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return 1, 1, err
     }
 
@@ -298,6 +332,7 @@ func FindAvailableVRIDs(url string, session string) (int, int, error) {
             if strings.Contains(parameter.Name, "ternal_vrid") {
                 intValue, err := strconv.Atoi(parameter.Value)
                 if err != nil {
+                    _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
                     return 1, 1, err
                 }
                 usedVRIDs = append(usedVRIDs, intValue)
@@ -333,12 +368,16 @@ func FindAvailableVRIDs(url string, session string) (int, int, error) {
         }
     }
 
+    _ = sysLog.Debug(fmt.Sprintf("%s Found externalVRID %d and internalVRID %d.", sysLogPrefix, externalVRID, internalVRID))
     return externalVRID, internalVRID, nil
 
 }
 
 
 func CreateVXLANSubnets(url string, session string, domainInfo Domain, globalParams GlobalParameters) (error) {
+
+    sysLogPrefix := "theforeman(package).dynamiclabs(file).CreateVXLANSubnets(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Creating vxlan subnets for domain %s.", sysLogPrefix, domainInfo.Name))
 
     // Create a random vxlan_id just in case someone external to the labs is using the sam group
     rand.Seed(time.Now().UnixNano())
@@ -347,12 +386,14 @@ func CreateVXLANSubnets(url string, session string, domainInfo Domain, globalPar
     // Convert the location name to id for the domain creation
     locationID, err := ConvLocNameToID(url, session, globalParams.LabLocationName)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
        return err
     }
 
     // Convert the organization name to id for the domain creation
     organizationID, err := ConvOrgNameToID(url, session, globalParams.LabOrgName)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
        return err
     }
 
@@ -394,6 +435,7 @@ func CreateVXLANSubnets(url string, session string, domainInfo Domain, globalPar
         // Create the subnet
         _, err := CreateSubnet(url, session, newSubnetStruct)
         if err != nil {
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
             return err
         }
 
@@ -407,9 +449,13 @@ func CreateVXLANSubnets(url string, session string, domainInfo Domain, globalPar
 
 func DeleteVXLANSubnets(url string, session string, domainName string) (error) {
 
+    sysLogPrefix := "theforeman(package).dynamiclabs(file).DeleteVXLANSubnets(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Deleting vxlan subnets for domain %s.", sysLogPrefix, domainName))
+
     // Get a fresh set of domain details
     domainDetails, err := GetDomainDetails(url, session, domainName)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return err
     }
 
@@ -417,14 +463,16 @@ func DeleteVXLANSubnets(url string, session string, domainName string) (error) {
     for _, subnet := range domainDetails.Subnets {
 
         // Remove domain associations
-        err := RemoveSubnetFromDomain(url, session, subnet.ID)
+        err := RemoveSubnetFromDomain(url, session, subnet.Name)
         if err != nil {
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
             return err
         }
 
         // Delete the subnet
-        err = DeleteSubnet(url, session, subnet.ID)
+        err = DeleteSubnet(url, session, subnet.Name)
         if err != nil {
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
             return err
         }
 
@@ -436,21 +484,26 @@ func DeleteVXLANSubnets(url string, session string, domainName string) (error) {
 
 func AssignInternalFloatingIP(url string, session string, domainName string, netSuffix string, netOffset int, overrideIP string) (error) {
 
+    sysLogPrefix := "theforeman(package).dynamiclabs(file).AssignInternalFloatingIP(func):"
+
     // init some vars
     internalFloatingIP := ""
 
     // Get a fresh set of domain details
     domainDetails, err := GetDomainDetails(url, session, domainName)
     if err != nil {
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return err
     }
 
     if overrideIP != "" {
 
+        _ = sysLog.Debug(fmt.Sprintf("%s Assiging internal floating ip with override %s to domain %s.", sysLogPrefix, overrideIP, domainName))
         internalFloatingIP = overrideIP
 
     } else {
 
+        _ = sysLog.Debug(fmt.Sprintf("%s Creating internal floating ip for domain %s from subnet suffix %s.", sysLogPrefix, domainName, netSuffix))
 
         // Set up string to match
         subnetPrefix := strings.ToUpper(strings.Split(domainDetails.Name, ".")[0])
@@ -464,6 +517,7 @@ func AssignInternalFloatingIP(url string, session string, domainName string, net
                 netStart := strings.Join(octList[0:3], ".")
                 netEnd, err := strconv.Atoi(octList[3])
                 if err != nil {
+                    _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
                     return err
                 }
                 internalFloatingIP = fmt.Sprintf("%s.%d", netStart, netEnd + netOffset)
@@ -474,11 +528,13 @@ func AssignInternalFloatingIP(url string, session string, domainName string, net
     }
 
     if internalFloatingIP == "" {
-        return fmt.Errorf("Unable to assign internal floating ip for domain %s\n", domainName)
+        return fmt.Errorf("theforeman(package).dynamiclabs(file).AssignInternalFloatingIP(func): Unable to assign internal floating ip for domain %s\n", domainName)
     }
 
+    _ = sysLog.Debug(fmt.Sprintf("%s Assiging internal floating ip %s to domain %s.", sysLogPrefix, internalFloatingIP, domainName))
     err = SetDomainParameter(url, session, domainDetails.ID, "internal_floating_ip", internalFloatingIP)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return err
     }
 

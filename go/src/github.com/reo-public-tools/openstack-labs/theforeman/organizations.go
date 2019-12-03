@@ -38,22 +38,31 @@ type Organization struct {
 }
 
 // Get the id of a organization
-func ConvOrgNameToID(url string, session string, locName string) (int, error) {
+func ConvOrgNameToID(url string, session string, orgName string) (int, error) {
+
+    sysLogPrefix := "theforeman(package).organizations(file).ConvOrgNameToID(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Getting id for organization name \"%s\"", sysLogPrefix, orgName))
+
     organizations, err := GetOrganizations(url, session)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return 1, err
     }
     for _, organization := range organizations {
-        if organization.Name == locName {
+        if organization.Name == orgName {
+            _ = sysLog.Debug(fmt.Sprintf("%s Found id %d for organization name %s", sysLogPrefix, organization.ID, orgName))
             return organization.ID, nil
         }
     }
 
-    return 1, fmt.Errorf("Organization %s not found in ConvOrgNameToID", locName)
+    return 1, fmt.Errorf("%s Organization %s not found in ConvOrgNameToID", sysLogPrefix, orgName)
 }
 
 // Structures for pulling a domain listing
 func GetOrganizations(url string, session string) ([]Organization, error) {
+
+    sysLogPrefix := "theforeman(package).organizations(file).GetOrganizations(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Getting a list of organizations.", sysLogPrefix))
 
     // Initialize the page and entries per page
     var entries_per_page int = 20
@@ -74,6 +83,7 @@ func GetOrganizations(url string, session string) ([]Organization, error) {
         // Set up the basic request from the url and body
         req, err := http.NewRequest("GET", requesturl, nil)
         if err != nil {
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
             return organizationList, err
         }
 
@@ -100,7 +110,8 @@ func GetOrganizations(url string, session string) ([]Organization, error) {
         // Read in the body and check status
         body, _ := ioutil.ReadAll(resp.Body)
         if resp.StatusCode != 200 {
-            return organizationList, errors.New(string(body))
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+            return organizationList, errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
         }
 
         // Convert the body to a byte array
@@ -109,6 +120,7 @@ func GetOrganizations(url string, session string) ([]Organization, error) {
         // Unmarshall the json byte array into a struct
         err = json.Unmarshal(bytes, &queryResults)
         if err != nil {
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
             return organizationList, err
         }
 

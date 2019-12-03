@@ -36,6 +36,9 @@ type SubnetParametersAttributes struct {
 
 func CreateSubnet(url string, session string, subnetData SubnetPostData) (Subnet, error) {
 
+    sysLogPrefix := "theforeman(package).subnets(file).CreateSubnet(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Creating subnet %s.", sysLogPrefix, subnetData.Subnet.Name))
+
     // Init the query results
     var queryResults Subnet
 
@@ -45,12 +48,14 @@ func CreateSubnet(url string, session string, subnetData SubnetPostData) (Subnet
     // Convert data to json
     postData, err := json.Marshal(subnetData)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return Subnet{}, err
     }
 
     // Set up the basic request from the url and body
     req, err := http.NewRequest("POST", requesturl, bytes.NewBufferString(string(postData)))
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return Subnet{}, err
     }
 
@@ -70,6 +75,7 @@ func CreateSubnet(url string, session string, subnetData SubnetPostData) (Subnet
     client := &http.Client{Transport: tr}
     resp, err := client.Do(req)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return Subnet{}, err
     }
     defer resp.Body.Close()
@@ -78,7 +84,8 @@ func CreateSubnet(url string, session string, subnetData SubnetPostData) (Subnet
     // Read in the body and check status
     body, _ := ioutil.ReadAll(resp.Body)
     if resp.StatusCode != 201 {
-        return Subnet{}, errors.New(string(body))
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+        return Subnet{}, errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
     }
 
     // Convert the body to a byte array
@@ -87,6 +94,7 @@ func CreateSubnet(url string, session string, subnetData SubnetPostData) (Subnet
     // Unmarshall the json byte array into a struct
     err = json.Unmarshal(bytes, &queryResults)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return Subnet{}, err
     }
 
@@ -94,6 +102,9 @@ func CreateSubnet(url string, session string, subnetData SubnetPostData) (Subnet
 }
 
 func RemoveSubnetFromDomain(url string, session string, subnetID interface{}) (error) {
+
+    sysLogPrefix := "theforeman(package).subnets(file).RemoveSubnetFromDomain(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Clearing subnet %v domain list to prep for removal.", sysLogPrefix, subnetID))
 
     requesturl := fmt.Sprintf("%s/api/subnets/%v", url, subnetID)
     data := "{\"subnet\": {\"domain_ids\": []}}"
@@ -120,6 +131,7 @@ func RemoveSubnetFromDomain(url string, session string, subnetID interface{}) (e
     client := &http.Client{Transport: tr}
     resp, err := client.Do(req)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return err
     }
     defer resp.Body.Close()
@@ -127,7 +139,8 @@ func RemoveSubnetFromDomain(url string, session string, subnetID interface{}) (e
     // Read in the body and check status
     body, _ := ioutil.ReadAll(resp.Body)
     if resp.StatusCode != 200 {
-        return errors.New(string(body))
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+        return errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
     }
 
     return nil
@@ -135,12 +148,16 @@ func RemoveSubnetFromDomain(url string, session string, subnetID interface{}) (e
 
 func DeleteSubnet(url string, session string, subnetID interface{}) (error) {
 
+    sysLogPrefix := "theforeman(package).subnets(file).DeleteSubnet(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Deleting subnet %v.", sysLogPrefix, subnetID))
+
     // Set the query url assuming the key doesn't exist
     var requesturl string = fmt.Sprintf("%s/api/subnets/%v", url, subnetID)
 
     // Set up the basic request from the url and body
     req, err := http.NewRequest("DELETE", requesturl, nil)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return err
     }
 
@@ -160,6 +177,7 @@ func DeleteSubnet(url string, session string, subnetID interface{}) (error) {
     client := &http.Client{Transport: tr}
     resp, err := client.Do(req)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return err
     }
     defer resp.Body.Close()
@@ -167,7 +185,8 @@ func DeleteSubnet(url string, session string, subnetID interface{}) (error) {
     // Read in the body and check status
     body, _ := ioutil.ReadAll(resp.Body)
     if resp.StatusCode != 200 {
-        return errors.New(string(body))
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+        return errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
     }
 
     return nil

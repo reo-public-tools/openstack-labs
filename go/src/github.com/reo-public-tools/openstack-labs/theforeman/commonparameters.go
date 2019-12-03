@@ -43,6 +43,9 @@ type CommonParameter struct {
 // Structures for pulling a domain listing
 func GetCommonParameters(url string, session string) ([]CommonParameter, error) {
 
+    sysLogPrefix := "theforeman(package).commonparameters(file).GetCommonParameters(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Getting a list of global(common) parameters.", sysLogPrefix))
+
     // Initialize the page and entries per page
     var entries_per_page int = 20
     var curpage int = 1
@@ -62,6 +65,7 @@ func GetCommonParameters(url string, session string) ([]CommonParameter, error) 
         // Set up the basic request from the url and body
         req, err := http.NewRequest("GET", requesturl, nil)
         if err != nil {
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
             return commonParameterList, err
         }
 
@@ -81,6 +85,7 @@ func GetCommonParameters(url string, session string) ([]CommonParameter, error) 
         client := &http.Client{Transport: tr}
         resp, err := client.Do(req)
         if err != nil {
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
             return commonParameterList, err
         }
         defer resp.Body.Close()
@@ -88,7 +93,7 @@ func GetCommonParameters(url string, session string) ([]CommonParameter, error) 
         // Read in the body and check status
         body, _ := ioutil.ReadAll(resp.Body)
         if resp.StatusCode != 200 {
-            return commonParameterList, errors.New(string(body))
+            return commonParameterList, errors.New("theforeman(package).commonparameters(file).GetCommonParameters(func): " + string(body))
         }
 
         // Convert the body to a byte array
@@ -97,6 +102,7 @@ func GetCommonParameters(url string, session string) ([]CommonParameter, error) 
         // Unmarshall the json byte array into a struct
         err = json.Unmarshal(bytes, &queryResults)
         if err != nil {
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
             return commonParameterList, err
         }
 

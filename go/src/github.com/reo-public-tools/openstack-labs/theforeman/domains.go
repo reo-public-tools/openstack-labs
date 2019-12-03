@@ -100,6 +100,10 @@ type NewDomainData struct {
 
 func GetDomains(url string, session string) ([]Domain, error) {
 
+    sysLogPrefix := "theforeman(package).domains(file).GetDomains(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Getting a non-detailed list of domains.", sysLogPrefix))
+
+
     // Initialize the page and entries per page
     var entries_per_page int = 20
     var curpage int = 1
@@ -119,6 +123,7 @@ func GetDomains(url string, session string) ([]Domain, error) {
         // Set up the basic request from the url and body
         req, err := http.NewRequest("GET", requesturl, nil)
         if err != nil {
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
             return domainList, err
         }
 
@@ -138,6 +143,7 @@ func GetDomains(url string, session string) ([]Domain, error) {
         client := &http.Client{Transport: tr}
         resp, err := client.Do(req)
         if err != nil {
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
             return domainList, err
         }
         defer resp.Body.Close()
@@ -145,7 +151,8 @@ func GetDomains(url string, session string) ([]Domain, error) {
         // Read in the body and check status
         body, _ := ioutil.ReadAll(resp.Body)
         if resp.StatusCode != 200 {
-            return domainList, errors.New(string(body))
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+            return domainList, errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
         }
 
         // Convert the body to a byte array
@@ -154,6 +161,7 @@ func GetDomains(url string, session string) ([]Domain, error) {
         // Unmarshall the json byte array into a struct
         err = json.Unmarshal(bytes, &queryResults)
         if err != nil {
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
             return domainList, err
         }
 
@@ -178,6 +186,9 @@ func GetDomains(url string, session string) ([]Domain, error) {
 
 func GetDomainDetails(url string, session string, domainid interface{}) (DomainInfo, error) {
 
+    sysLogPrefix := "theforeman(package).domains(file).GetDomainDetails(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Getting details for domain %v", sysLogPrefix, domainid))
+
     // Init some vars
     domainInfo := DomainInfo{}
 
@@ -187,6 +198,7 @@ func GetDomainDetails(url string, session string, domainid interface{}) (DomainI
     // Set up the basic request from the url and body
     req, err := http.NewRequest("GET", requesturl, nil)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return domainInfo, err
     }
 
@@ -206,6 +218,7 @@ func GetDomainDetails(url string, session string, domainid interface{}) (DomainI
     client := &http.Client{Transport: tr}
     resp, err := client.Do(req)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return domainInfo, err
     }
     defer resp.Body.Close()
@@ -213,7 +226,8 @@ func GetDomainDetails(url string, session string, domainid interface{}) (DomainI
     // Read in the body and check status
     body, _ := ioutil.ReadAll(resp.Body)
     if resp.StatusCode != 200 {
-        return domainInfo, errors.New(string(body))
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+        return domainInfo, errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
     }
 
     // Convert the body to a byte array
@@ -222,6 +236,7 @@ func GetDomainDetails(url string, session string, domainid interface{}) (DomainI
     // Unmarshall the json byte array into a struct
     err = json.Unmarshal(bytes, &domainInfo)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return domainInfo, err
     }
 
@@ -231,9 +246,13 @@ func GetDomainDetails(url string, session string, domainid interface{}) (DomainI
 
 func SetDomainParameter(url string, session string, domainid int, paramkey string, paramvalue interface{}) (error) {
 
+    sysLogPrefix := "theforeman(package).domains(file).SetDomainParameter(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Setting domain(%d) parameter key(%s) value(%v)", sysLogPrefix, domainid, paramkey, paramvalue))
+
     // Get a fresh set of domain details
     curdomaininfo, err := GetDomainDetails(url, session, domainid)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return err
     }
 
@@ -261,6 +280,7 @@ func SetDomainParameter(url string, session string, domainid int, paramkey strin
     // Set up the basic request from the url and body
     req, err := http.NewRequest(action, requesturl, bytes.NewBufferString(data))
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return err
     }
 
@@ -280,6 +300,7 @@ func SetDomainParameter(url string, session string, domainid int, paramkey strin
     client := &http.Client{Transport: tr}
     resp, err := client.Do(req)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return err
     }
     defer resp.Body.Close()
@@ -287,7 +308,8 @@ func SetDomainParameter(url string, session string, domainid int, paramkey strin
     // Read in the body and check status
     body, _ := ioutil.ReadAll(resp.Body)
     if !(resp.StatusCode == 200 || resp.StatusCode == 201) {
-        return errors.New(string(body))
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+        return errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
     }
 
     return nil
@@ -297,12 +319,16 @@ func SetDomainParameter(url string, session string, domainid int, paramkey strin
 
 func GetDomainsWithDetails(url string, session string) ([]DomainInfo, error) {
 
+    sysLogPrefix := "theforeman(package).domains(file).GetDomainsWithDetails(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Getting a list of domains including details.", sysLogPrefix))
+
     // List to return
     domainInfoList := []DomainInfo{}
 
     // Get a full foreman domain listing
     domains, err := GetDomains(url, session)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return domainInfoList, err
     }
 
@@ -317,6 +343,7 @@ func GetDomainsWithDetails(url string, session string) ([]DomainInfo, error) {
         // Get the details for the current domain
         curDomainInfo, err := GetDomainDetails(url, session, domain.ID)
         if err != nil {
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
             return domainInfoList, err
         }
 
@@ -330,6 +357,9 @@ func GetDomainsWithDetails(url string, session string) ([]DomainInfo, error) {
 
 func CreateNewDomain(url string, session string, domainData DomainPostData) (Domain, error) {
 
+    sysLogPrefix := "theforeman(package).domains(file).CreateNewDomain(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Creating a new domain %s.", sysLogPrefix, domainData.Domain.Name))
+
     // Init the query results var
     var queryResults Domain
 
@@ -339,12 +369,14 @@ func CreateNewDomain(url string, session string, domainData DomainPostData) (Dom
     // Convert data to json
     postData, err := json.Marshal(domainData)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return Domain{}, err
     }
 
     // Set up the basic request from the url and body
     req, err := http.NewRequest("POST", requesturl, bytes.NewBufferString(string(postData)))
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return Domain{}, err
     }
 
@@ -364,6 +396,7 @@ func CreateNewDomain(url string, session string, domainData DomainPostData) (Dom
     client := &http.Client{Transport: tr}
     resp, err := client.Do(req)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return Domain{}, err
     }
     defer resp.Body.Close()
@@ -371,7 +404,8 @@ func CreateNewDomain(url string, session string, domainData DomainPostData) (Dom
     // Read in the body and check status
     body, _ := ioutil.ReadAll(resp.Body)
     if resp.StatusCode != 201 {
-        return Domain{}, errors.New(string(body))
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+        return Domain{}, errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
     }
 
     // Convert the body to a byte array
@@ -380,6 +414,7 @@ func CreateNewDomain(url string, session string, domainData DomainPostData) (Dom
     // Unmarshall the json byte array into a struct
     err = json.Unmarshal(bytes, &queryResults)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return Domain{}, err
     }
 
@@ -388,12 +423,16 @@ func CreateNewDomain(url string, session string, domainData DomainPostData) (Dom
 
 func DeleteDomain(url string, session string, domainName string) (error) {
 
+    sysLogPrefix := "theforeman(package).domains(file).CreateNewDomain(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Deleting domain %s.", sysLogPrefix, domainName))
+
     // Set the query url assuming the key doesn't exist
     var requesturl string = fmt.Sprintf("%s/api/domains/%s", url, domainName)
 
     // Set up the basic request from the url and body
     req, err := http.NewRequest("DELETE", requesturl, nil)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return err
     }
 
@@ -413,6 +452,7 @@ func DeleteDomain(url string, session string, domainName string) (error) {
     client := &http.Client{Transport: tr}
     resp, err := client.Do(req)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return err
     }
     defer resp.Body.Close()
@@ -420,7 +460,8 @@ func DeleteDomain(url string, session string, domainName string) (error) {
     // Read in the body and check status
     body, _ := ioutil.ReadAll(resp.Body)
     if resp.StatusCode != 200 {
-        return errors.New(string(body))
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+        return errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
     }
 
     return nil

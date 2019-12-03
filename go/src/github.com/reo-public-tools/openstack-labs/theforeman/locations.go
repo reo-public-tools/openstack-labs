@@ -39,21 +39,30 @@ type Location struct {
 
 // Get the id of a location
 func ConvLocNameToID(url string, session string, locName string) (int, error) {
+
+    sysLogPrefix := "theforeman(package).locations(file).ConvLocNameToID(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Getting id for location name \"%s\"", sysLogPrefix, locName))
+
     locations, err := GetLocations(url, session)
     if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return 1, err
     }
     for _, location := range locations {
         if location.Name == locName {
+            _ = sysLog.Debug(fmt.Sprintf("%s Found id %d for location name %s", sysLogPrefix, location.ID, locName))
             return location.ID, nil
         }
     }
 
-    return 1, fmt.Errorf("Location %s not found in ConvLocNameToID", locName)
+    return 1, fmt.Errorf("%s Location %s not found in ConvLocNameToID", sysLogPrefix, locName)
 }
 
 // Structures for pulling a domain listing
 func GetLocations(url string, session string) ([]Location, error) {
+
+    sysLogPrefix := "theforeman(package).locations(file).GetLocations(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Getting a list of locations.", sysLogPrefix))
 
     // Initialize the page and entries per page
     var entries_per_page int = 20
@@ -74,6 +83,7 @@ func GetLocations(url string, session string) ([]Location, error) {
         // Set up the basic request from the url and body
         req, err := http.NewRequest("GET", requesturl, nil)
         if err != nil {
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
             return locationList, err
         }
 
@@ -93,6 +103,7 @@ func GetLocations(url string, session string) ([]Location, error) {
         client := &http.Client{Transport: tr}
         resp, err := client.Do(req)
         if err != nil {
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
             return locationList, err
         }
         defer resp.Body.Close()
@@ -100,7 +111,8 @@ func GetLocations(url string, session string) ([]Location, error) {
         // Read in the body and check status
         body, _ := ioutil.ReadAll(resp.Body)
         if resp.StatusCode != 200 {
-            return locationList, errors.New(string(body))
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+            return locationList, errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
         }
 
         // Convert the body to a byte array
@@ -109,6 +121,7 @@ func GetLocations(url string, session string) ([]Location, error) {
         // Unmarshall the json byte array into a struct
         err = json.Unmarshal(bytes, &queryResults)
         if err != nil {
+            _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
             return locationList, err
         }
 
