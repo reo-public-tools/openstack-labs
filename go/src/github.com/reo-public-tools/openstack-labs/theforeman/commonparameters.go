@@ -2,7 +2,6 @@ package theforeman
 
 import (
     "fmt"
-    "errors"
     "net/http"
     "io/ioutil"
     "crypto/tls"
@@ -93,7 +92,7 @@ func GetCommonParameters(url string, session string) ([]CommonParameter, error) 
         // Read in the body and check status
         body, _ := ioutil.ReadAll(resp.Body)
         if resp.StatusCode != 200 {
-            return commonParameterList, errors.New("theforeman(package).commonparameters(file).GetCommonParameters(func): " + string(body))
+            return commonParameterList, fmt.Errorf("%s %s", sysLogPrefix, string(body))
         }
 
         // Convert the body to a byte array

@@ -3,7 +3,6 @@ package theforeman
 import (
     "fmt"
     "bytes"
-    "errors"
     "net/http"
     "io/ioutil"
     "crypto/tls"
@@ -152,7 +151,7 @@ func GetDomains(url string, session string) ([]Domain, error) {
         body, _ := ioutil.ReadAll(resp.Body)
         if resp.StatusCode != 200 {
             _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
-            return domainList, errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+            return domainList, fmt.Errorf("%s %s", sysLogPrefix, string(body))
         }
 
         // Convert the body to a byte array
@@ -227,7 +226,7 @@ func GetDomainDetails(url string, session string, domainid interface{}) (DomainI
     body, _ := ioutil.ReadAll(resp.Body)
     if resp.StatusCode != 200 {
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
-        return domainInfo, errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+        return domainInfo, fmt.Errorf("%s %s", sysLogPrefix, string(body))
     }
 
     // Convert the body to a byte array
@@ -309,7 +308,7 @@ func SetDomainParameter(url string, session string, domainid int, paramkey strin
     body, _ := ioutil.ReadAll(resp.Body)
     if !(resp.StatusCode == 200 || resp.StatusCode == 201) {
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
-        return errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+        return fmt.Errorf("%s %s", sysLogPrefix, string(body))
     }
 
     return nil
@@ -405,7 +404,7 @@ func CreateNewDomain(url string, session string, domainData DomainPostData) (Dom
     body, _ := ioutil.ReadAll(resp.Body)
     if resp.StatusCode != 201 {
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
-        return Domain{}, errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+        return Domain{}, fmt.Errorf("%s %s", sysLogPrefix, string(body))
     }
 
     // Convert the body to a byte array
@@ -461,7 +460,7 @@ func DeleteDomain(url string, session string, domainName string) (error) {
     body, _ := ioutil.ReadAll(resp.Body)
     if resp.StatusCode != 200 {
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
-        return errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+        return fmt.Errorf("%s %s", sysLogPrefix, string(body))
     }
 
     return nil

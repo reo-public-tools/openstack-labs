@@ -3,7 +3,6 @@ package theforeman
 import (
     "fmt"
     "bytes"
-    "errors"
     "net/http"
     "io/ioutil"
     "crypto/tls"
@@ -85,7 +84,7 @@ func CreateSubnet(url string, session string, subnetData SubnetPostData) (Subnet
     body, _ := ioutil.ReadAll(resp.Body)
     if resp.StatusCode != 201 {
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
-        return Subnet{}, errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+        return Subnet{}, fmt.Errorf("%s %s", sysLogPrefix, string(body))
     }
 
     // Convert the body to a byte array
@@ -140,7 +139,7 @@ func RemoveSubnetFromDomain(url string, session string, subnetID interface{}) (e
     body, _ := ioutil.ReadAll(resp.Body)
     if resp.StatusCode != 200 {
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
-        return errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+        return fmt.Errorf("%s %s", sysLogPrefix, string(body))
     }
 
     return nil
@@ -186,7 +185,7 @@ func DeleteSubnet(url string, session string, subnetID interface{}) (error) {
     body, _ := ioutil.ReadAll(resp.Body)
     if resp.StatusCode != 200 {
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
-        return errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+        return fmt.Errorf("%s %s", sysLogPrefix, string(body))
     }
 
     return nil

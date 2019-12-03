@@ -23,31 +23,31 @@ func main() {
 
     // Set the url to your local forman server
     var url string = "https://172.20.41.28"
-    sysLog.Info(fmt.Sprintf("Setting foreman url to %s.", url))
+    _ = sysLog.Info(fmt.Sprintf("Setting foreman url to %s.", url))
 
     // Get the session id string
-    sysLog.Info("Logging into the foreman.")
+    _ = sysLog.Info("Logging into the foreman.")
     session, err := theforeman.TheForemanLogin(url)
     if err != nil {
         log.Fatal(err)
     }
 
     // Find a static vlan backed domain available for use
-    sysLog.Info("Look for a free static domain.")
+    _ = sysLog.Info("Look for a free static domain.")
     curdomaininfo, err := theforeman.FindAvailableVLANDomain(url, session)
     fmt.Printf("Found available domain %s to check out\n", curdomaininfo.Name)
     if err != nil {
         log.Fatal(err)
     }
 
-    sysLog.Info(fmt.Sprintf("Checking out static lab %s\n", curdomaininfo.Name))
+    _ = sysLog.Info(fmt.Sprintf("Checking out static lab %s\n", curdomaininfo.Name))
     fmt.Printf("Checking out lab %s\n", curdomaininfo.Name)
     err = theforeman.CheckOutVLANDomain(url, session, curdomaininfo.ID)
     if err != nil {
         log.Fatal(err)
     }
 
-    sysLog.Info(fmt.Sprintf("Releasing static lab %s\n", curdomaininfo.Name))
+    _ = sysLog.Info(fmt.Sprintf("Releasing static lab %s\n", curdomaininfo.Name))
     fmt.Printf("Releasing lab %s\n", curdomaininfo.Name)
     err = theforeman.ReleaseVLANDomain(url, session, curdomaininfo.ID)
     if err != nil {
@@ -56,13 +56,13 @@ func main() {
 
 
 
-    sysLog.Info("Creating a dynamic lab.")
+    _ = sysLog.Info("Creating a dynamic lab.")
     err = theforeman.CreateDynamicLab(url, session)
     if err != nil {
         log.Fatal(err)
     }
 
-    sysLog.Info("Releasing dynamic lab lab2.phobos.rpc.rackspace.com.")
+    _ = sysLog.Info("Releasing dynamic lab lab2.phobos.rpc.rackspace.com.")
     err = theforeman.DeleteDynamicLab(url, session, "lab2.phobos.rpc.rackspace.com")
     if err != nil {
         log.Fatal(err)

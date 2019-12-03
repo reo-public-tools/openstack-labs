@@ -2,7 +2,6 @@ package theforeman
 
 import (
     "fmt"
-    "errors"
     "net/http"
     "io/ioutil"
     "crypto/tls"
@@ -111,7 +110,7 @@ func GetOrganizations(url string, session string) ([]Organization, error) {
         body, _ := ioutil.ReadAll(resp.Body)
         if resp.StatusCode != 200 {
             _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
-            return organizationList, errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+            return organizationList, fmt.Errorf("%s %s", sysLogPrefix, string(body))
         }
 
         // Convert the body to a byte array

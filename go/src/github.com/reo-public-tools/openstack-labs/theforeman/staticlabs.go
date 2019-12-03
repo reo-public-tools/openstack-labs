@@ -2,7 +2,6 @@ package theforeman
 
 import (
     "fmt"
-    "errors"
 )
 
 func CheckOutVLANDomain(url string, session string, domainid int) (error) {
@@ -82,6 +81,6 @@ func FindAvailableVLANDomain(url string, session string) (DomainInfo, error) {
     } // End "for_, domain := range domains {"
 
 
-    return DomainInfo{}, errors.New(fmt.Sprintf("%s No static vlan backed domains available for use.", sysLogPrefix))
+    return DomainInfo{}, fmt.Errorf("%s No static vlan backed domains available for use.", sysLogPrefix)
 }
 

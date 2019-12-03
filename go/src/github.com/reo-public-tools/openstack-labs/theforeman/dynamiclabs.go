@@ -3,7 +3,6 @@ package theforeman
 import (
     "fmt"
     "time"
-    "errors"
     "strconv"
     "strings"
     "math/rand"
@@ -231,7 +230,7 @@ func FindAvailableLabSlot(url string, session string, baseDomain string) (string
 
     } // End "for domainIndex <= maxLabs {"
 
-    return "", 0, errors.New(fmt.Sprintf("%s We hit the max lab limit without finding an available slot.", sysLogPrefix))
+    return "", 0, fmt.Errorf("%s We hit the max lab limit without finding an available slot.", sysLogPrefix)
 
 }
 
@@ -239,7 +238,7 @@ func FindAvailableLabSlot(url string, session string, baseDomain string) (string
 func FindAvailableMulticastGroup(url string, session string, multicastGroupBase string) (string, error) {
 
     sysLogPrefix := "theforeman(package).dynamiclabs(file).FindAvailableMulticastGroup(func):"
-    _ = sysLog.Debug(fmt.Sprintf("%s Finding free multicast group using base %s for a new dynamic(vxlan) domain. %s", sysLogPrefix, multicastGroupBase))
+    _ = sysLog.Debug(fmt.Sprintf("%s Finding free multicast group using base %s for a new dynamic(vxlan) domain.", sysLogPrefix, multicastGroupBase))
 
     // Init the return value
     mcreturn := ""
@@ -528,7 +527,7 @@ func AssignInternalFloatingIP(url string, session string, domainName string, net
     }
 
     if internalFloatingIP == "" {
-        return fmt.Errorf("theforeman(package).dynamiclabs(file).AssignInternalFloatingIP(func): Unable to assign internal floating ip for domain %s\n", domainName)
+        return fmt.Errorf("%s Unable to assign internal floating ip for domain %s\n", sysLogPrefix, domainName)
     }
 
     _ = sysLog.Debug(fmt.Sprintf("%s Assiging internal floating ip %s to domain %s.", sysLogPrefix, internalFloatingIP, domainName))

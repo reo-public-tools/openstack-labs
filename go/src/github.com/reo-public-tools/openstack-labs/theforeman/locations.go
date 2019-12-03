@@ -2,7 +2,6 @@ package theforeman
 
 import (
     "fmt"
-    "errors"
     "net/http"
     "io/ioutil"
     "crypto/tls"
@@ -112,7 +111,7 @@ func GetLocations(url string, session string) ([]Location, error) {
         body, _ := ioutil.ReadAll(resp.Body)
         if resp.StatusCode != 200 {
             _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
-            return locationList, errors.New(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+            return locationList, fmt.Errorf("%s %s", sysLogPrefix, string(body))
         }
 
         // Convert the body to a byte array
