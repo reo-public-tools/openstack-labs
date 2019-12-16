@@ -5,6 +5,7 @@ import (
   "log"
   "log/syslog"
   "github.com/reo-public-tools/openstack-labs/theforeman"
+  "github.com/reo-public-tools/openstack-labs/osutils"
 )
 
 func main() {
@@ -20,6 +21,7 @@ func main() {
     // want to change where its writing for things
     // like remote logging.
     theforeman.OverrideLogWriter(sysLog)
+    osutils.OverrideLogWriter(sysLog)
 
     // Set the url to your local forman server
     var url string = "https://172.20.41.28"
@@ -32,6 +34,10 @@ func main() {
         log.Fatal(err)
     }
 
+    fmt.Println(session)
+
+
+/*
     // Find a static vlan backed domain available for use
     _ = sysLog.Info("Look for a free static domain.")
     curdomaininfo, err := theforeman.FindAvailableVLANDomain(url, session)
@@ -67,6 +73,7 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
+*/
 /*
 
     err = theforeman.DeleteDynamicLab(url, session, "lab3.phobos.rpc.rackspace.com")
@@ -76,7 +83,48 @@ func main() {
 
 */
 
-    fmt.Println("finished")
+    // Auth to openstack test
+    provider, err := osutils.OpenstackLogin("phobos")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    nodeList, err := osutils.GetAvailableIronicNodeListByCapability(&provider, "system_type", "standard")
+    if err != nil {
+        log.Fatal(err)
+    }
+    for _, curnode := range nodeList {
+        fmt.Println(curnode.UUID)
+    }
+    //fmt.Println(nodeList)
+
+    flavorCapability, err := osutils.GetFlavorCapability(&provider, "ironic-standard", "system_type")
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(flavorCapability)
+
+
+    ironicRequest := osutils.IronicOnIronicRequest{
+            IronicOnIronicNodeRequests: []osutils.IronicOnIronicNodeRequest {
+                { Flavor: "ironic-standard", Count: 5 },
+                { Flavor: "ironic-storage-perf", Count: 3 },
+            },
+        }
+
+    testIronic, err := osutils.CheckIronicCapacity(&provider, ironicRequest)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if testIronic {
+        fmt.Printf("Ironic on ironic capacity check good\n")
+    }
+
+    macList, err := osutils.GetIronicPXEMacs(&provider, "6fc8d998-848d-48d7-9e32-7594bc72e2e9")
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(macList)
 
 
 }

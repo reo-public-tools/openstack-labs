@@ -5,7 +5,7 @@ GOINSTALL=$(GOCMD) install
 GOCLEAN=$(GOCMD) clean
 BINDIR=./bin
 
-all: build 
+all: deps build 
 
 build:
 	$(GOBUILD) -v -o ${BINDIR}/oslabs github.com/reo-public-tools/openstack-labs/oslabs
@@ -18,6 +18,10 @@ clean:
 test:
 	$(GOTEST) -v ./...
 
+
+deps:
+	$(GOCMD) get github.com/gophercloud/gophercloud
+	$(GOCMD) get github.com/gophercloud/utils/openstack/clientconfig
 
 lint-all: install-golangci-lint lint
 
