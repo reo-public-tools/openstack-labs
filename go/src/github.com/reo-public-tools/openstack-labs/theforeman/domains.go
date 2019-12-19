@@ -243,10 +243,10 @@ func GetDomainDetails(url string, session string, domainid interface{}) (DomainI
 
 }
 
-func SetDomainParameter(url string, session string, domainid int, paramkey string, paramvalue interface{}) (error) {
+func SetDomainParameter(url string, session string, domainid interface{}, paramkey string, paramvalue interface{}) (error) {
 
     sysLogPrefix := "theforeman(package).domains(file).SetDomainParameter(func):"
-    _ = sysLog.Debug(fmt.Sprintf("%s Setting domain(%d) parameter key(%s) value(%v)", sysLogPrefix, domainid, paramkey, paramvalue))
+    _ = sysLog.Debug(fmt.Sprintf("%s Setting domain(%v) parameter key(%s) value(%v)", sysLogPrefix, domainid, paramkey, paramvalue))
 
     // Get a fresh set of domain details
     curdomaininfo, err := GetDomainDetails(url, session, domainid)
@@ -257,7 +257,7 @@ func SetDomainParameter(url string, session string, domainid int, paramkey strin
 
 
     // Set the query url assuming the key doesn't exist
-    var requesturl string = fmt.Sprintf("%s/api/domains/%d/parameters", url, domainid)
+    var requesturl string = fmt.Sprintf("%s/api/domains/%v/parameters", url, domainid)
     var data string = fmt.Sprintf("{\"parameter\": {\"name\": \"%s\", \"value\": \"%v\"}}", paramkey, paramvalue)
     var action string = "POST"
 
@@ -271,7 +271,7 @@ func SetDomainParameter(url string, session string, domainid int, paramkey strin
 
     // Modify the request url to account for an existing parameter for this key
     if pExists == 1 {
-        requesturl = fmt.Sprintf("%s/api/domains/%d/parameters/%s", url, domainid, paramkey)
+        requesturl = fmt.Sprintf("%s/api/domains/%v/parameters/%s", url, domainid, paramkey)
         data = fmt.Sprintf("{\"value\": \"%v\"}", paramvalue)
         action = "PUT"
     }
@@ -315,6 +315,94 @@ func SetDomainParameter(url string, session string, domainid int, paramkey strin
 
 }
 
+func DeleteDomainParameter(url string, session string, domainid interface{}, paramkey string) (error) {
+
+    sysLogPrefix := "theforeman(package).domains(file).DeleteDomainParameter(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Deleting domain(%v) parameter key(%s)", sysLogPrefix, domainid, paramkey))
+
+    // Get a fresh set of domain details
+    curdomaininfo, err := GetDomainDetails(url, session, domainid)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return err
+    }
+
+
+    // Set the query url assuming the key doesn't exist
+    var requesturl string = fmt.Sprintf("%s/api/domains/%v/parameters/%s", url, domainid, paramkey)
+    var action string = "DELETE"
+
+    pExists := 0
+    for _, parameter := range curdomaininfo.Parameters {
+        if parameter.Name == paramkey {
+            pExists = 1
+        }
+    }
+    if pExists == 0 {
+        return nil
+    }
+
+    // Set up the basic request from the url and body
+    req, err := http.NewRequest(action, requesturl, nil)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return err
+    }
+
+    // Make sure we are using the proper content type for the configs api
+    req.Header.Set("Content-Type", "application/json")
+    req.Header.Set("Accept", "application/json,version=2")
+
+    // Set the session Cookie header
+    req.Header.Set("Cookie", fmt.Sprintf("_session_id=%s", session))
+
+    // Disable tls verify
+    tr := &http.Transport{
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+    }
+
+    // Set up the http client and do the request
+    client := &http.Client{Transport: tr}
+    resp, err := client.Do(req)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return err
+    }
+    defer resp.Body.Close()
+
+    // Read in the body and check status
+    body, _ := ioutil.ReadAll(resp.Body)
+    if !(resp.StatusCode == 200 || resp.StatusCode == 201) {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+        return fmt.Errorf("%s %s", sysLogPrefix, string(body))
+    }
+
+    return nil
+
+}
+
+func GetDomainParameter(url string, session string, domainid interface{}, paramkey string) (string, error) {
+
+    sysLogPrefix := "theforeman(package).domains(file).GetDomainParameter(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Getting domain(%v) parameter key(%s)", sysLogPrefix, domainid, paramkey))
+
+    // Get a fresh set of domain details
+    curdomaininfo, err := GetDomainDetails(url, session, domainid)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return "", err
+    }
+
+    // See if the parameter exists
+    for _, parameter := range curdomaininfo.Parameters {
+        if parameter.Name == paramkey {
+            return parameter.Value, nil
+        }
+    }
+
+    return "", fmt.Errorf("Parameter kay %s for domain %s is not currently set", paramkey, domainid)
+
+}
 
 func GetDomainsWithDetails(url string, session string) ([]DomainInfo, error) {
 
