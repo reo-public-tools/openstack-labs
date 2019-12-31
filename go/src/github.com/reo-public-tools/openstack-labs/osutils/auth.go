@@ -5,6 +5,7 @@ import (
     "github.com/gophercloud/gophercloud"
     "github.com/gophercloud/gophercloud/openstack"
     "github.com/gophercloud/utils/openstack/clientconfig"
+    "github.com/gophercloud/gophercloud/openstack/identity/v3/tokens"
 )
 
 func OpenstackLogin(cloud string) (gophercloud.ProviderClient, error) {
@@ -32,5 +33,27 @@ func OpenstackLogin(cloud string) (gophercloud.ProviderClient, error) {
         return gophercloud.ProviderClient{}, err
     }
 
+
     return *provider, nil
+}
+
+func GetMyProjectID(provider *gophercloud.ProviderClient) (string, error) {
+
+    sysLogPrefix := "osutils(package).auth(file).GetMyProjectID(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Pulling project ID from current session token.", sysLogPrefix))
+
+    identityClient, err := openstack.NewIdentityV3(provider, gophercloud.EndpointOpts{ Region: "RegionOne", })
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return "", err
+    }
+
+    token := tokens.Get(identityClient, provider.TokenID)
+    projectInfo, err := token.ExtractProject()
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return "", err
+    }
+
+    return projectInfo.ID, nil
 }

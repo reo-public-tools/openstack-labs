@@ -87,6 +87,12 @@ static_labs:
       - name: "internal_floating_ip"
         value: "172.20.64.10"
         parameter_type: "string"
+      - name: "internal_vrid"
+        value: "12"
+        parameter_type: "string"
+      - name: "external_vrid"
+        value: "13"
+        parameter_type: "string"
       # external_floating_ip will need pulled from ironic after/during checkoug
     domain_subnets:
       - subnet_name: "LAB1-MGMT"

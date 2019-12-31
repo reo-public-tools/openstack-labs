@@ -23,7 +23,7 @@ type GlobalParameters struct {
         VXLANNetworks       []string
 }
 
-func CreateDynamicLab(url string, session string) (error) {
+func CreateDynamicLab(url string, session string) (DomainInfo, error) {
 
     sysLogPrefix := "theforeman(package).dynamiclabs(file).CreateDynamicLab(func):"
     _ = sysLog.Debug(fmt.Sprintf("%s Creating a dynamic(vxlan) backed lab.", sysLogPrefix))
@@ -33,7 +33,7 @@ func CreateDynamicLab(url string, session string) (error) {
     commonParameters, err := GetCommonParameters(url, session)
     if err != nil {
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
-        return err
+        return DomainInfo{}, err
     }
 
     // Set some variables based on the parameters
@@ -55,7 +55,7 @@ func CreateDynamicLab(url string, session string) (error) {
             case "vxlan_third_octet_step":
                 globalParams.VXLANThirdOctetStep, err = strconv.Atoi(parameter.Value)
                 if err != nil {
-                    return err
+                    return DomainInfo{}, err
                 }
             case "vxlan_networks":
                 globalParams.VXLANNetworks = strings.Split(parameter.Value, ",")
@@ -68,24 +68,31 @@ func CreateDynamicLab(url string, session string) (error) {
     domainInfo, err := CreateDynamicLabDomain(url, session, globalParams)
     if err != nil {
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
-        return err
+        return DomainInfo{}, err
     }
 
     // Make the call to create the vxlan networks for the new domain
     err = CreateVXLANSubnets(url, session, domainInfo, globalParams)
     if err != nil {
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
-        return err
+        return DomainInfo{}, err
     }
 
     // Make the call to create an internal floating ip
     err = AssignInternalFloatingIP(url, session, domainInfo.Name, "MGMT", 10, "")
     if err != nil {
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
-        return err
+        return DomainInfo{}, err
     }
 
-    return nil
+    // Get detailed domain info to return
+    domainDetails, err := GetDomainDetails(url, session, domainInfo.Name)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return DomainInfo{}, err
+    }
+
+    return domainDetails, nil
 }
 
 func DeleteDynamicLab(url string, session string, domainName string) (error) {
