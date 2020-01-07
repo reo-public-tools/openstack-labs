@@ -11,57 +11,17 @@ import (
 const domainNamePrefix = "lab"
 const maxLabs = 50
 
-
-type GlobalParameters struct {
-        LabOrgName          string
-        LabLocationName     string
-        LabBaseDomainName   string
-        MulticastGroupBase  string
-        VXLANNetworkPrefix  string
-        VXLANNetmask        string
-        VXLANThirdOctetStep int
-        VXLANNetworks       []string
-}
-
 func CreateDynamicLab(url string, session string) (DomainInfo, error) {
 
     sysLogPrefix := "theforeman(package).dynamiclabs(file).CreateDynamicLab(func):"
     _ = sysLog.Debug(fmt.Sprintf("%s Creating a dynamic(vxlan) backed lab.", sysLogPrefix))
 
 
-    // Get a list of common parameters that will be used when creating a domain
-    commonParameters, err := GetCommonParameters(url, session)
+    // Get a struct populated with common parameter data
+    globalParams, err := GetGlobalParameters(url, session)
     if err != nil {
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
-        return DomainInfo{}, err
-    }
-
-    // Set some variables based on the parameters
-    globalParams := GlobalParameters{}
-    for _, parameter := range commonParameters {
-        switch parameter.Name {
-            case "lab_base_domain_name":
-                globalParams.LabBaseDomainName = parameter.Value
-            case "lab_org_name":
-                globalParams.LabOrgName = parameter.Value
-            case "lab_location_name":
-                globalParams.LabLocationName = parameter.Value
-            case "multicast_group_base":
-                globalParams.MulticastGroupBase = parameter.Value
-            case "vxlan_network_prefix":
-                globalParams.VXLANNetworkPrefix = parameter.Value
-            case "vxlan_netmask":
-                globalParams.VXLANNetmask = parameter.Value
-            case "vxlan_third_octet_step":
-                globalParams.VXLANThirdOctetStep, err = strconv.Atoi(parameter.Value)
-                if err != nil {
-                    return DomainInfo{}, err
-                }
-            case "vxlan_networks":
-                globalParams.VXLANNetworks = strings.Split(parameter.Value, ",")
-            default:
-                continue
-        }
+       return DomainInfo{}, err
     }
 
     // Make call to create the domain in foreman
@@ -385,7 +345,7 @@ func CreateVXLANSubnets(url string, session string, domainInfo Domain, globalPar
     sysLogPrefix := "theforeman(package).dynamiclabs(file).CreateVXLANSubnets(func):"
     _ = sysLog.Debug(fmt.Sprintf("%s Creating vxlan subnets for domain %s.", sysLogPrefix, domainInfo.Name))
 
-    // Create a random vxlan_id just in case someone external to the labs is using the sam group
+    // Create a random vxlan_id just in case someone external to the labs is using the same group
     rand.Seed(time.Now().UnixNano())
     vxlanID := rand.Intn(16000000 - 50000 + 1) + 50000
 
@@ -428,6 +388,7 @@ func CreateVXLANSubnets(url string, session string, domainInfo Domain, globalPar
                 Gateway: curGateway,
                 From: curFrom,
                 To: curTo,
+                Mtu: 9000,
                 Ipam: "Internal DB",
                 BootMode: "Static",
                 DomainIds: []int{ domainInfo.ID },

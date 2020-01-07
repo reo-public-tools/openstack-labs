@@ -235,7 +235,7 @@ func TheForemanLogin(url string) (string, error) {
     re := regexp.MustCompile("_session_id=([^;]*)")
     match := re.FindStringSubmatch(cookieheader)
     if len(match) != 0 { session = match[1] }
-    fmt.Println("Cookie: ", session)
+    //fmt.Println("Cookie: ", session)
 
     // Print out the body
     //body, _ := ioutil.ReadAll(resp.Body)

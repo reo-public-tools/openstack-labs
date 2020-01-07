@@ -2,6 +2,8 @@ package theforeman
 
 import (
     "fmt"
+    "strings"
+    "strconv"
     "net/http"
     "io/ioutil"
     "crypto/tls"
@@ -39,7 +41,61 @@ type CommonParameter struct {
 	Value         string      `json:"value"`
 }
 
-// Structures for pulling a domain listing
+type GlobalParameters struct {
+        LabOrgName          string
+        LabLocationName     string
+        LabBaseDomainName   string
+        MulticastGroupBase  string
+        VXLANNetworkPrefix  string
+        VXLANNetmask        string
+        VXLANThirdOctetStep int
+        VXLANNetworks       []string
+}
+
+func GetGlobalParameters(url string, session string) (GlobalParameters, error) {
+
+    sysLogPrefix := "theforeman(package).commonparameters(file).GetGlobalParameters(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Get globalParameters struct based on commonparameter attributes", sysLogPrefix))
+
+
+    // Get a list of common parameters that will be used when creating a domain
+    commonParameters, err := GetCommonParameters(url, session)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return GlobalParameters{}, err
+    }
+
+    // Set some variables based on the parameters
+    globalParams := GlobalParameters{}
+    for _, parameter := range commonParameters {
+        switch parameter.Name {
+            case "lab_base_domain_name":
+                globalParams.LabBaseDomainName = parameter.Value
+            case "lab_org_name":
+                globalParams.LabOrgName = parameter.Value
+            case "lab_location_name":
+                globalParams.LabLocationName = parameter.Value
+            case "multicast_group_base":
+                globalParams.MulticastGroupBase = parameter.Value
+            case "vxlan_network_prefix":
+                globalParams.VXLANNetworkPrefix = parameter.Value
+            case "vxlan_netmask":
+                globalParams.VXLANNetmask = parameter.Value
+            case "vxlan_third_octet_step":
+                globalParams.VXLANThirdOctetStep, err = strconv.Atoi(parameter.Value)
+                if err != nil {
+                    return GlobalParameters{}, err
+                }
+            case "vxlan_networks":
+                globalParams.VXLANNetworks = strings.Split(parameter.Value, ",")
+            default:
+                continue
+        }
+    }
+
+    return globalParams, nil
+}
+
 func GetCommonParameters(url string, session string) ([]CommonParameter, error) {
 
     sysLogPrefix := "theforeman(package).commonparameters(file).GetCommonParameters(func):"

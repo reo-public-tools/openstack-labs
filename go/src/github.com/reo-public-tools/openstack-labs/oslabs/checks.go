@@ -14,9 +14,15 @@ func CheckIronicCapacity(labConfig LabConfig, session string) (bool, error) {
     // Loop through the config and get the flavor name for each foremanhost request part
     for _, node := range labConfig.Environment.ForemanHosts {
 
-        if strings.Contains(node.ForemanComputeProfile, "ironic") {
+        // Get the compute profile from the hostgroup.
+        hostgroupInfo, err := theforeman.GetHostgroupInfo(labConfig.ForemanURL, session, node.ForemanHostgroup)
+        if err != nil {
+            return false, err
+        }
 
-            flavorName, err := theforeman.ConvProfileNameToFlavorName(labConfig.ForemanURL, session, node.ForemanComputeProfile)
+        if strings.Contains(hostgroupInfo.ComputeProfileName, "ironic") {
+
+            flavorName, err := theforeman.ConvProfileNameToFlavorName(labConfig.ForemanURL, session, hostgroupInfo.ComputeProfileName)
             if err != nil {
                 return false, err
             }

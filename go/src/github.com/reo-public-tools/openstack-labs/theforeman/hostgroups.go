@@ -10,38 +10,35 @@ import (
 
 
 // Struct for holding the api query results for compute profiles
-type ComputeProfileQueryResults struct {
-	CreatedAt         string `json:"created_at"`
-	UpdatedAt         string `json:"updated_at"`
-	ID                int    `json:"id"`
-	Name              string `json:"name"`
-	ComputeAttributes []struct {
-		ID                   int    `json:"id"`
-		Name                 string `json:"name"`
-		ComputeResourceID    int    `json:"compute_resource_id"`
-		ComputeResourceName  string `json:"compute_resource_name"`
-		ProviderFriendlyName string `json:"provider_friendly_name"`
-		ComputeProfileID     int    `json:"compute_profile_id"`
-		ComputeProfileName   string `json:"compute_profile_name"`
-	} `json:"compute_attributes"`
+type HostGroupQueryResults struct {
+	CreatedAt           string `json:"created_at"`
+	UpdatedAt           string `json:"updated_at"`
+	ID                  int    `json:"id"`
+	Name                string `json:"name"`
+        ComputeProfileName  string `json:"compute_profile_name"`
+        ComputeProfileID    int    `json:"compute_profile_id"`
+        ComputeResourceName string `json:"compute_resource_name"`
+        ComputeResourceID   int    `json:"compute_resource_id"`
+        ArchitectureName    string `json:"architecture_name"`
+        ArchitectureID      int    `json:"architecture_id"`
 }
 
-func ConvProfileNameToFlavorName(url string, session string, computeProfileName string) (string, error) {
+func GetHostgroupInfo(url string, session string, hostGroup interface{}) (HostGroupQueryResults, error) {
 
-    sysLogPrefix := "theforeman(package).computeprofiles(file).ConvProfileNameToFlavorName(func):"
-    _ = sysLog.Debug(fmt.Sprintf("%s Getting flavor name for compute profile \"%s\"", sysLogPrefix, computeProfileName))
+    sysLogPrefix := "theforeman(package).hostgroups(file).ConvHostGroupNameToID(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Getting host info for \"%v\"", sysLogPrefix, hostGroup))
 
     // var for holding the query results
-    var queryResults ComputeProfileQueryResults
+    var queryResults HostGroupQueryResults
 
     // Set the query url
-    var requesturl string = fmt.Sprintf("%s/api/compute_profiles/%s", url, computeProfileName)
+    var requesturl string = fmt.Sprintf("%s/api/hostgroups/%v", url, hostGroup)
 
     // Set up the basic request from the url and body
     req, err := http.NewRequest("GET", requesturl, nil)
     if err != nil {
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
-        return "", err
+        return HostGroupQueryResults{}, err
     }
 
     // Make sure we are using the proper content type for the configs api
@@ -61,7 +58,7 @@ func ConvProfileNameToFlavorName(url string, session string, computeProfileName 
     resp, err := client.Do(req)
     if err != nil {
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
-        return "", err
+        return HostGroupQueryResults{}, err
     }
     defer resp.Body.Close()
 
@@ -69,7 +66,7 @@ func ConvProfileNameToFlavorName(url string, session string, computeProfileName 
     body, _ := ioutil.ReadAll(resp.Body)
     if resp.StatusCode != 200 {
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
-        return "", fmt.Errorf("%s %s", sysLogPrefix, string(body))
+        return HostGroupQueryResults{}, fmt.Errorf("%s %s", sysLogPrefix, string(body))
     }
 
     // Convert the body to a byte array
@@ -79,24 +76,23 @@ func ConvProfileNameToFlavorName(url string, session string, computeProfileName 
     err = json.Unmarshal(bytes, &queryResults)
     if err != nil {
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
-        return "", err
+        return HostGroupQueryResults{}, err
     }
 
-    return queryResults.ComputeAttributes[0].Name, nil
+    return queryResults, nil
 
 }
 
+func ConvHostGroupNameToID(url string, session string, hostGroupName string) (int, error) {
 
-func ConvComputeProfileNameToID(url string, session string, computeProfileName string) (int, error) {
-
-    sysLogPrefix := "theforeman(package).computeprofiles(file).ConvComputeProfileNameToID(func):"
-    _ = sysLog.Debug(fmt.Sprintf("%s Getting compute profile id from name \"%s\"", sysLogPrefix, computeProfileName))
+    sysLogPrefix := "theforeman(package).hostgroups(file).ConvHostGroupNameToID(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Getting host group id from name \"%s\"", sysLogPrefix, hostGroupName))
 
     // var for holding the query results
-    var queryResults ComputeProfileQueryResults
+    var queryResults HostGroupQueryResults
 
     // Set the query url
-    var requesturl string = fmt.Sprintf("%s/api/compute_profiles/%s", url, computeProfileName)
+    var requesturl string = fmt.Sprintf("%s/api/hostgroups/%s", url, hostGroupName)
 
     // Set up the basic request from the url and body
     req, err := http.NewRequest("GET", requesturl, nil)
@@ -143,6 +139,8 @@ func ConvComputeProfileNameToID(url string, session string, computeProfileName s
         return 0, err
     }
 
-    return queryResults.ComputeAttributes[0].ID, nil
+    return queryResults.ID, nil
 
 }
+
+

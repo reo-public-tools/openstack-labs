@@ -24,9 +24,15 @@ func Delete(labName string) (error) {
         return err
     }
 
+    // Connect to openstack
+    provider, err := osutils.OpenstackLogin(labConfig.OpenstackCloud)
+    if err != nil {
+        return err
+    }
+
     // Get domain details from provided name
     _ = sysLog.Info(fmt.Sprintf("Pulling info for domain: %s\n", labName))
-    fmt.Printf("Pullinginfo for domain: %s.\n", labName)
+    fmt.Printf("Pulling info for domain: %s.\n", labName)
     curdomaininfo, err := theforeman.GetDomainDetails(labConfig.ForemanURL, session, labName)
     if err != nil {
         return err
@@ -42,13 +48,75 @@ func Delete(labName string) (error) {
         }
     }
 
-    /* #### Delete the neutron port and clear the parameter #### */
 
-    // Connect to openstack
-    provider, err := osutils.OpenstackLogin(labConfig.OpenstackCloud)
+
+    /* #### Delete any hosts using this domain ####  */
+
+    // Get host listing for the domain
+    _ = sysLog.Info(fmt.Sprintf("Pulling host listing for domain for deletion: %s\n", curdomaininfo.Name))
+    fmt.Printf("Pulling host listing for domain: %s.\n", curdomaininfo.Name)
+    detailedHostList, err := theforeman.GetHostsDetailsByDomainID(labConfig.ForemanURL, session, curdomaininfo.ID)
     if err != nil {
         return err
     }
+
+    // Loop over hosts and delete each
+    for _, curHost := range detailedHostList {
+
+        // Delete the host
+        _ = sysLog.Info(fmt.Sprintf("Deleting host: %s\n", curHost.Name))
+        fmt.Printf("Deleting host: %s.\n", curHost.Name)
+        err = theforeman.DeleteHost(labConfig.ForemanURL, session, curHost.Name)
+        if err != nil {
+            return err
+        }
+    }
+
+
+
+    /* #### Clear the ssh_authorized_keys parameter #### */
+
+    _ = sysLog.Info(fmt.Sprintf("Deleting ssh_authorized_keys domain parameter\n"))
+    fmt.Printf("Deleting ssh_authorized_keys domain parameter\n")
+    err = theforeman.DeleteDomainParameter(labConfig.ForemanURL, session, labName, "ssh_authorized_keys")
+    if err != nil {
+        return err
+    }
+
+
+    /* #### Ironic-On-Ironic node release #### */
+
+    // Pull the ioi_data parameter
+    _ = sysLog.Info(fmt.Sprintf("Pulling IOI data  for domain: %s\n", labName))
+    fmt.Printf("Pulling the IOI data for domain: %s.\n", labName)
+    IOIData, err := theforeman.GetDomainParameter(labConfig.ForemanURL, session, labName, "ioi_data")
+    if err == nil && IOIData != "" {
+
+        // Take the base64 encoded json string and convert back to a noda data struct
+        _ = sysLog.Info(fmt.Sprintf("Decoding basd64 data and clearing domain param for domain: %s\n", labName))
+        fmt.Printf("Decoding basd64 data and clearing domain param for domain: %s\n", labName)
+        IOINodeList, err := osutils.JSONStringToNodeData(IOIData, true)
+        if err != nil {
+            return err
+        }
+
+        // Release the node
+        err = osutils.ReleaseIronicNodes(&provider, IOINodeList, true)
+        if err != nil {
+            fmt.Println("Release failed. Please check devices manually")
+            fmt.Println(IOINodeList)
+            return err
+        }
+
+        // Delete the domain parameter
+        err = theforeman.DeleteDomainParameter(labConfig.ForemanURL, session, labName, "ioi_data")
+        if err != nil {
+            return err
+        }
+    }
+
+
+    /* #### Delete the neutron port and clear the parameter #### */
 
     // Delete the domain parameter
     _ = sysLog.Info(fmt.Sprintf("Clearing the external_floating_ip parameter\n"))

@@ -47,13 +47,21 @@ func main() {
     createCommand := flag.NewFlagSet("create", flag.ExitOnError)
     listCommand   := flag.NewFlagSet("list", flag.ExitOnError)
     deleteCommand := flag.NewFlagSet("delete", flag.ExitOnError)
+    showCommand   := flag.NewFlagSet("show", flag.ExitOnError)
+    scratchCommand := flag.NewFlagSet("scratch", flag.ExitOnError)
     //checkCommand  := flag.NewFlagSet("check", flag.ExitOnError)
 
     // Create subcommand flag pointers
     configFilePtr := createCommand.String("c", "", "Lab yaml config file")
 
     // Delete subcommand flag pointers
-    labNamePtr := deleteCommand.String("l", "", "Lab name to clean up")
+    deleteLabNamePtr := deleteCommand.String("l", "", "Lab name to clean up")
+
+    // Show subcommand flag pointers
+    showLabNamePtr := showCommand.String("l", "", "Lab name pull details on")
+
+    // Create subcommand flag pointers
+    scratchConfigFilePtr := scratchCommand.String("c", "", "Lab yaml config file")
 
 
     // Verify that the subcommand is provided
@@ -72,6 +80,10 @@ func main() {
         listCommand.Parse(os.Args[2:])
     case "delete":
         deleteCommand.Parse(os.Args[2:])
+    case "show":
+        showCommand.Parse(os.Args[2:])
+    case "scratch":
+        scratchCommand.Parse(os.Args[2:])
     default:
         flag.PrintDefaults()
         os.Exit(1)
@@ -106,13 +118,45 @@ func main() {
     if deleteCommand.Parsed() {
 
         // Exist out if arg is empty.
-        if *labNamePtr == "" {
+        if *deleteLabNamePtr == "" {
+            flag.PrintDefaults()
+            os.Exit(1)
+        }
+
+        // Run function to clean up and release|delete a lab
+        err := Delete(*deleteLabNamePtr)
+        if err != nil {
+            log.Fatal(err)
+        }
+    }
+
+    // Run show if parsed
+    if showCommand.Parsed() {
+
+        // Exist out if arg is empty.
+        if *showLabNamePtr == "" {
+            flag.PrintDefaults()
+            os.Exit(1)
+        }
+
+        // Display details for the specified lab
+        err := Show(*showLabNamePtr)
+        if err != nil {
+            log.Fatal(err)
+        }
+    }
+
+    // Scratch action used for tested & development
+    if scratchCommand.Parsed() {
+
+        // Exist out if arg is empty.
+        if *scratchConfigFilePtr == "" {
             flag.PrintDefaults()
             os.Exit(1)
         }
 
         // Run the create function on the config
-        err := Delete(*labNamePtr)
+        err := Scratch(*scratchConfigFilePtr)
         if err != nil {
             log.Fatal(err)
         }

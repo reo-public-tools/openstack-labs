@@ -1,0 +1,18 @@
+- name: Create new puppet environments for labs
+  theforeman.foreman.foreman_environment:
+    validate_certs: no
+    username: '{{ foreman_username }}'
+    password: '{{ foreman_password }}'
+    server_url: '{{ foreman_url }}'
+    state: present
+    name: '{{ item }}'
+    locations:
+      - "Default Location"
+      - '{{ lab_location_name }}'
+    organizations:
+      - "Default Organization"
+      - '{{ lab_org_name }}'
+  with_items: '{{ puppet_environment_names }}'
+  tags:
+    - configure_environments
+

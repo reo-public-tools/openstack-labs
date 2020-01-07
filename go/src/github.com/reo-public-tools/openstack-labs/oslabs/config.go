@@ -7,12 +7,13 @@ import (
 )
 
 type LabConfig struct {
-        ForemanURL       string `yaml:"foreman_url"`
-	LabType          string `yaml:"lab_type"`
-	OpenstackCloud   string `yaml:"openstack_cloud"`
-	PubSSHKey        string `yaml:"pub_ssh_key"`
-        OpenstackNetwork string `yaml:"openstack_network"`
-	Environment      struct {
+        ForemanURL          string `yaml:"foreman_url"`
+        ForemanArchitecture string `yaml:"foreman_architecture"`
+	LabType             string `yaml:"lab_type"`
+	OpenstackCloud      string `yaml:"openstack_cloud"`
+	PubSSHKey           string `yaml:"pub_ssh_key"`
+        OpenstackNetwork    string `yaml:"openstack_network"`
+	Environment         struct {
                   ForemanHosts        []ForemanHosts        `yaml:"foreman_hosts"`
                   IronicOnIronicHosts []IronicOnIronicHosts `yaml:"ironic_on_ironic_hosts"`
 	} `yaml:"environment"`
@@ -20,8 +21,7 @@ type LabConfig struct {
 
 type ForemanHosts struct {
         Role                  string `yaml:"role"`
-        ForemanComputeProfile string `yaml:"foreman-compute-profile"`
-        ForemanOs             string `yaml:"foreman-os"`
+        ForemanHostgroup      string `yaml:"foreman-hostgroup"`
         Count                 int    `yaml:"count"`
 }
 

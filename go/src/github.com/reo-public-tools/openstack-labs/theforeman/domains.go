@@ -400,7 +400,7 @@ func GetDomainParameter(url string, session string, domainid interface{}, paramk
         }
     }
 
-    return "", fmt.Errorf("Parameter kay %s for domain %s is not currently set", paramkey, domainid)
+    return "", fmt.Errorf("Parameter key %s for domain %s is not currently set", paramkey, domainid)
 
 }
 
@@ -510,7 +510,7 @@ func CreateNewDomain(url string, session string, domainData DomainPostData) (Dom
 
 func DeleteDomain(url string, session string, domainName string) (error) {
 
-    sysLogPrefix := "theforeman(package).domains(file).CreateNewDomain(func):"
+    sysLogPrefix := "theforeman(package).domains(file)DeleteDomain(func):"
     _ = sysLog.Debug(fmt.Sprintf("%s Deleting domain %s.", sysLogPrefix, domainName))
 
     // Set the query url assuming the key doesn't exist

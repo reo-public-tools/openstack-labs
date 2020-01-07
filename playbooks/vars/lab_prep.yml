@@ -71,7 +71,7 @@ openstack_project_admin_email: "shannon.mitchell@rackspace.com"
 # ironic nodes in the phobos cluster.
 ########################################################
 static_labs:
-  - domain_name: "lab1.{{ base_domain_name }}"
+  - domain_name: "lab1.{{ lab_base_domain_name }}"
     domain_organizations: 
       - '{{ lab_org_name }}'
     domain_locations:
@@ -313,3 +313,36 @@ foreman_compute_profiles:
 #    |                    |                     |                 |                                                         |                            | 
 #
     
+
+
+#############################################################
+# List of puppet environment names to use for provisioning.
+# These will be tied to the default and lab org & loc.
+#############################################################
+puppet_environment_names:
+  - "labdev"
+  - "labtest"
+  - "labprod"
+
+
+##########################################################
+# We will create some host groups to map to various roles
+# being tested in the labs here.
+##########################################################
+
+host_groups:
+  - name: "kube-ironic-ubuntu-bionic"
+    architecture: "x86_64"
+    operatingsystem: "Ubuntu Bionic"
+    description: "Generic kubernetes test box running ubuntu bionic on ironic"
+    compute_profile: "ironic-standard_baremetal-ubuntu-bionic"
+    compute_resource: "phobos-int.rpc.rackspace.com"
+    environment: "labprod"
+    puppet_proxy: "{{ instance_name }}.localdomain"
+    puppet_ca_proxy: "{{ instance_name }}.localdomain"
+    organizations:
+      - '{{ lab_org_name }}'
+    locations:
+      - '{{ lab_location_name }}'
+    root_pass: "change4me"
+

@@ -1,0 +1,23 @@
+- name: Create foreman host groups
+  theforeman.foreman.foreman_hostgroup:
+    validate_certs: no
+    username: '{{ foreman_username }}'
+    password: '{{ foreman_password }}'
+    server_url: '{{ foreman_url }}'
+    state: present
+    name: '{{ item.name }}'
+    description: '{{ item.description }}'
+    locations: '{{ item.locations }}'
+    organizations: '{{ item.organizations }}'
+    architecture: '{{ item.architecture }}'
+    operatingsystem: '{{ item.operatingsystem }}'
+    compute_profile: '{{ item.compute_profile }}'
+    compute_resource: '{{ item.compute_resource }}'
+    environment: '{{ item.environment }}'
+    puppet_proxy: '{{ item.puppet_proxy }}'
+    puppet_ca_proxy: '{{ item.puppet_ca_proxy }}'
+    root_pass: '{{ item.root_pass }}'
+  with_items: '{{ host_groups }}'
+  tags:
+    - create_domains
+

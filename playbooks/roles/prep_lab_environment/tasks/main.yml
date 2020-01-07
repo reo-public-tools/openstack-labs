@@ -35,3 +35,17 @@
   become: false
   tags:
     - provisioning_templates
+
+# Include Foreman related environment tasks
+- include: provision_environments.yml
+  when: inventory_hostname == 'localhost'
+  become: false
+  tags:
+    - provision_environments
+
+# Include Foreman related host group tasks
+- include: provision_host_groups.yml
+  when: inventory_hostname == 'localhost'
+  become: false
+  tags:
+    - provision_host_groups
