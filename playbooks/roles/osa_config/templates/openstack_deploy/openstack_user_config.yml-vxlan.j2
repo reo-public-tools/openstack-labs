@@ -1,0 +1,187 @@
+---
+cidr_networks:
+  host: 172.20.40.0/22
+{%- for cursubnet in subnets %}
+  {% if cursubnet.endswith("STOR-MGMT") -%}
+  storage-mgmt: {{ subnets[cursubnet]['network_address'] }}
+  {%- elif cursubnet.endswith("MGMT") -%}
+  container: {{ subnets[cursubnet]['network_address'] }}
+  {%- elif cursubnet.endswith("LBAAS") -%}
+  lbaas: {{ subnets[cursubnet]['network_address'] }}
+  {%- elif cursubnet.endswith("STORAGE") -%}
+  storage: {{ subnets[cursubnet]['network_address'] }}
+  {%- elif cursubnet.endswith("TENANT") -%}
+  tunnel: {{ subnets[cursubnet]['network_address'] }}
+  {%- endif -%}
+{% endfor %}
+
+used_ips:
+{%- for cursubnet in subnets %}
+  - "{{ subnets[cursubnet]['dhcp_from'] }},{{ subnets[cursubnet]['dhcp_to'] }}"
+{%- endfor %}
+  - "{{ domain_parameters['internal_floating_ip'] }}"
+  - "{{ domain_parameters['external_floating_ip'] }}"
+ 
+
+global_overrides:
+  internal_lb_vip_address: "{{ domain_parameters['internal_floating_ip'] }}"
+  external_lb_vip_address: "{{ domain_parameters['external_floating_ip'] }}"
+  tunnel_bridge: "br-tenant"
+  management_bridge: "br-mgmt"
+  provider_networks:
+    - network:
+        container_bridge: "br-mgmt"
+        container_type: "veth"
+        container_interface: "eth1"
+        ip_from_q: "container"
+        type: "raw"
+        group_binds:
+          - all_containers
+          - hosts
+        is_container_address: true
+        is_ssh_address: true
+    - network:
+        container_bridge: "br-vxlan"
+        container_type: "veth"
+        container_interface: "eth10"
+        ip_from_q: "tunnel"
+        type: "vxlan"
+        range: "1:1000"
+        net_name: "vxlan"
+        group_binds:
+          - neutron_linuxbridge_agent
+    - network:
+        container_bridge: "br-storage"
+        container_type: "veth"
+        container_interface: "eth2"
+        ip_from_q: "storage"
+        type: "raw"
+        group_binds:
+          - glance_api
+          - cinder_api
+          - cinder_volume
+          - nova_compute
+    - network:
+        container_bridge: "br-lbaas"
+        container_type: "veth"
+        container_interface: "eth14"
+        ip_from_q: "lbaas"
+        type: "flat"
+        host_bind_override: "lb-veth-ovrd"
+        net_name: "lbaas"
+        group_binds:
+          - neutron_linuxbridge_agent
+          - octavia-worker
+          - octavia-housekeeping
+          - octavia-health-manager
+    - network:
+        container_bridge: "br-vlan"
+        container_type: "veth"
+        container_interface: "eth11"
+        type: "vlan"
+        range: ""
+        net_name: "vlan"
+        group_binds:
+          - neutron_linuxbridge_agent
+
+
+###################
+# Infra Host anchor
+###################
+infra_hosts: &infra_hosts
+{%- for curhost in groups['all'] %}
+{%- if curhost.startswith("infra") %}
+  {{ curhost.split(".")[0] }}:
+  {%- for interface in hostvars[curhost].interfaces -%}
+    {%-if interface.subnet.endswith("MGMT") and not interface.subnet.endswith("STOR-MGMT") %}
+    ip: {{ interface.ip }}
+    {% endif -%}
+  {% endfor %}
+{%- endif -%}
+{% endfor %}
+
+######################
+# Haproxy Host anchor
+######################
+haproxy_hosts: &haproxy_hosts
+{%- for curhost in groups['all'] %}
+{%- if curhost.startswith("haproxy") %}
+  {{ curhost.split(".")[0] }}:
+  {%- for interface in hostvars[curhost].interfaces -%}
+    {%-if interface.subnet.endswith("MGMT") and not interface.subnet.endswith("STOR-MGMT") %}
+    ip: {{ interface.ip }}
+    {% endif -%}
+  {% endfor %}
+{%- endif -%}
+{% endfor %}
+
+######################
+# Log Host anchor
+######################
+log_hosts: &log_hosts
+{%- for curhost in groups['all'] %}
+{%- if curhost.startswith("logging") %}
+  {{ curhost.split(".")[0] }}:
+  {%- for interface in hostvars[curhost].interfaces -%}
+    {%-if interface.subnet.endswith("MGMT") and not interface.subnet.endswith("STOR-MGMT") %}
+    ip: {{ interface.ip }}
+    {% endif -%}
+  {% endfor %}
+{%- endif -%}
+{% endfor %}
+
+######################
+# Compute Host anchor
+######################
+compute_hosts: &compute_hosts
+{%- for curhost in groups['all'] %}
+{%- if curhost.startswith("compute") %}
+  {{ curhost.split(".")[0] }}:
+  {%- for interface in hostvars[curhost].interfaces -%}
+    {%-if interface.subnet.endswith("MGMT") and not interface.subnet.endswith("STOR-MGMT") %}
+    ip: {{ interface.ip }}
+    {% endif -%}
+  {% endfor %}
+{%- endif -%}
+{% endfor %}
+
+######################
+# Storage Hosts
+######################
+storage_hosts: &storage_hosts
+{%- for curhost in groups['all'] %}
+{%- if curhost.startswith("infra") %}
+  {{ curhost.split(".")[0] }}:
+  {%- for interface in hostvars[curhost].interfaces -%}
+    {%-if interface.subnet.endswith("MGMT") and not interface.subnet.endswith("STOR-MGMT") %}
+    ip: {{ interface.ip }}
+    container_vars:
+      cinder_backends:
+        limit_container_types: cinder_volume
+        ceph:
+          volume_driver: cinder.volume.drivers.rbd.RBDDriver
+          rbd_pool: cinder-volumes
+          rbd_ceph_conf: /etc/ceph/ceph.conf
+          rbd_flatten_volume_from_snapshot: 'false'
+          rbd_max_clone_depth: 5
+          rbd_store_chunk_size: 4
+          rados_connect_timeout: -1
+          glance_api_version: 2
+          volume_backend_name: ceph
+          rbd_user: "{{ '{{' }} cinder_ceph_client {{ '}}' }}"
+          rbd_secret_uuid: "{{ '{{' }} cinder_ceph_client_uuid {{ '}}' }}"
+    {% endif -%}
+  {% endfor %}
+{%- endif -%}
+{% endfor %}
+
+#########################
+# Infra hosts references
+#########################
+{%- for cursection in ['shared-infra_hosts', 'repo-infra_hosts', 'os-infra_hosts', 'identity_hosts', 'storage-infra_hosts', 'database_hosts', 'image_hosts', 'compute-infra_hosts', 'orchestration_hosts', 'dashboard_hosts', 'network_hosts', 'dnsaas_hosts', 'designate-bind_hosts', 'octavia-infra_hosts', 'utility_hosts'] %}
+{{ cursection }}:
+  *infra_hosts
+{% endfor %}
+
+
+

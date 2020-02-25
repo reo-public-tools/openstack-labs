@@ -1,0 +1,34 @@
+radosgw_address: "{{ '{{' }} mgmt_ip {{ '}}' }}"
+
+journel_size: 5120
+
+# Pull ceph from upstream
+ceph_origin: repository
+ceph_repository: community
+ceph_mirror: http://download.ceph.com
+ceph_stable_key: https://download.ceph.com/keys/release.asc
+ceph_stable_release: mimic
+ceph_stable_repo: "{{ '{{' }} ceph_mirror {{ '}}' }}/debian-{{ '{{' }} ceph_stable_release {{ '}}' }}"
+
+
+public_network:
+{%- for cursubnet in subnets -%}
+{%- if cursubnet.endswith("STORAGE") %}
+ {{ subnets[cursubnet]['network_address'] }}
+{%- endif %}
+{%- endfor %}
+
+
+ceph_conf_overrides:
+  mon:
+    mon_allow_pool_delete: true
+  "client.rgw.{{ '{{' }} hostvars[inventory_hostname]['ansible_hostname'] {{ '}}' }}":
+    rgw_keystone_verify_ssl: false
+    rgw_keystone_admin_user: admin
+    rgw_keystone_admin_password: {{ keyston_auth_admin_password }}
+    rgw_keystone_admin_tenant: admin
+    rgw_keystone_admin_project: admin
+    rgw_keystone_admin_domain: Default
+    rgw_keystone_api_version: 3
+    rgw_keystone_url: http://{{ domain_parameters.internal_floating_ip }}:5000
+

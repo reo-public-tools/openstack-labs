@@ -1,0 +1,267 @@
+###########################
+# Install any dependancies
+###########################
+- name: Install apt dependancies
+  apt:
+    name: "{{ item }}"
+    state: present
+  tags:
+    - osa_config
+    - osa_config_apt
+  with_items:
+    - "virtualenv"
+
+#################################################
+# Pull down the openstack-ansible and ceph repos
+#################################################
+
+- name: Clone the openstack-ansible repo into /opt/openstack-ansible
+  git:
+    repo: "https://github.com/openstack/openstack-ansible.git"
+    dest: "/opt/openstack-ansible"
+    version: "{{ osa_branch }}"
+  tags:
+    - osa_config
+    - osa_config_clone
+
+- name: Clone the ceph-ansible repo into /opt/ceph-ansible
+  git:
+    repo: "https://github.com/ceph/ceph-ansible.git"
+    dest: "/opt/ceph-ansible"
+    version: "{{ ceph_ansible_branch }}"
+  tags:
+    - osa_config
+    - osa_config_clone
+
+- name: Create openstack directories
+  file:
+    path: "{{ item }}"
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+  tags:
+    - osa_config
+    - osa_config_prep
+  with_items:
+    - "/etc/openstack_deploy"
+    - "/etc/openstack_deploy/env.d"
+    - "/etc/openstack_deploy/conf.d"
+
+
+####################################################
+# Run the bootstrap for the pw gen script virtualenv
+####################################################
+
+- name: Check if /opt/ansible-runtime exists
+  stat: 
+    path: "/opt/ansible-runtime"
+  register: st
+  tags:
+    - osa_config
+    - osa_config_prep
+
+- name: Run bootstrap if not already
+  shell: /opt/openstack-ansible/scripts/bootstrap-ansible.sh
+  tags:
+    - osa_config
+    - osa_config_prep
+  when: not st.stat.exists
+
+####################################################
+# Generate the user_secrets.yml passwords
+####################################################
+- name: Check if /etc/openstack_deploy/user_secrets.yml exists
+  stat: 
+    path: "/etc/openstack_deploy/user_secrets.yml"
+  tags:
+    - osa_config
+    - osa_config_prep
+  register: stus
+
+- name: Copy over the secrets file if needed
+  copy:
+    remote_src: yes
+    src: "/opt/openstack-ansible/etc/openstack_deploy/user_secrets.yml"
+    dest: "/etc/openstack_deploy/user_secrets.yml"
+  tags:
+    - osa_config
+    - osa_config_prep
+  when: not stus.stat.exists
+
+- name: Run the password generation scripts on user_secrets.yml if needed
+  shell: /opt/openstack-ansible/scripts/pw-token-gen.py --file /etc/openstack_deploy/user_secrets.yml
+  tags:
+    - osa_config
+    - osa_config_prep
+  when: not stus.stat.exists
+
+
+
+#######################################
+# Apply openstack_user_config template
+#######################################
+- name: Generate /etc/openstack_deploy/openstack_user_config.yml(vlan)
+  template:
+    src: openstack_deploy/openstack_user_config.yml.j2
+    dest: /etc/openstack_deploy/openstack_user_config.yml
+    owner: root
+    group: root
+    mode: '0644'
+    trim_blocks: no
+  when: domain_parameters['type'] == 'vlan'
+  tags:
+    - osa_config
+    - osa_config_yaml
+
+- name: Generate /etc/openstack_deploy/openstack_user_config.yml(vxlan)
+  template:
+    src: openstack_deploy/openstack_user_config.yml-vxlan.j2
+    dest: /etc/openstack_deploy/openstack_user_config.yml
+    owner: root
+    group: root
+    mode: '0644'
+    trim_blocks: no
+  when: domain_parameters['type'] == 'vxlan'
+  tags:
+    - osa_config
+    - osa_config_yaml
+
+###################################################
+# Apply user_osa_variables_overrides.yml template
+###################################################
+- name: Generate /etc/openstack_deploy/user_osa_variables_overrides.yml
+  template:
+    src: openstack_deploy/user_osa_variables_overrides.yml.j2
+    dest: /etc/openstack_deploy/user_osa_variables_overrides.yml
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - osa_config
+    - osa_config_yaml
+
+
+#####################################
+# Make sure cinder onmetal is false
+#####################################
+- name: Copy the cinder env.d file over
+  copy:
+    remote_src: yes
+    src: /opt/openstack-ansible/inventory/env.d/cinder.yml
+    dest: /etc/openstack_deploy/env.d/cinder.yml
+  tags:
+    - osa_config
+    - osa_config_yaml
+
+###############################
+# Change onmetal line to false
+###############################
+- name: Update cinder env.d file to disable onmetal
+  lineinfile:
+    path: /etc/openstack_deploy/env.d/cinder.yml
+    regexp: '      is_metal: true'
+    line: '      is_metal: false'
+  tags:
+    - osa_config
+    - osa_config_yaml
+
+
+#####################
+# Apply ceph configs
+#####################
+- name: Generate /etc/openstack_deploy/conf.d/ceph.yml
+  template:
+    src: openstack_deploy/conf.d/ceph.yml.j2
+    dest: /etc/openstack_deploy/conf.d/ceph.yml
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - osa_config
+    - ceph_config_yaml
+    - osa_config_yaml
+
+- name: Generate /etc/openstack_deploy/env.d/ceph.yml
+  template:
+    src: openstack_deploy/env.d/ceph.yml.j2
+    dest: /etc/openstack_deploy/env.d/ceph.yml
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - osa_config
+    - ceph_config_yaml
+    - osa_config_yaml
+
+- name: Generate /opt/ceph-ansible/ceph_inventory
+  template:
+    src: ceph-ansible/ceph_inventory.j2
+    dest: /opt/ceph-ansible/ceph_inventory
+    owner: root
+    group: root
+    mode: '0644'
+    #trim_blocks: yes
+    #lstrip_blocks: yes
+  tags:
+    - osa_config
+    - ceph_config_yaml
+
+- name: Get keystone admin password
+  shell: awk '/keystone_auth_admin_password/{print $2}' /etc/openstack_deploy/user_secrets.yml
+  register: keystoneauth
+  tags:
+    - osa_config
+    - ceph_config_yaml
+
+- name: Set fack based on output
+  set_fact:
+    keyston_auth_admin_password: "{{ keystoneauth.stdout }}"
+  tags:
+    - osa_config
+    - ceph_config_yaml
+
+- name: Generate /opt/ceph-ansible/group_vars/all.yml
+  template:
+    src: ceph-ansible/group_vars/all.yml.j2
+    dest: /opt/ceph-ansible/group_vars/all.yml
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - osa_config
+    - ceph_config_yaml
+
+- name: Generate /opt/ceph-ansible/group_vars/osds.yml
+  template:
+    src: ceph-ansible/group_vars/osds.yml.j2
+    dest: /opt/ceph-ansible/group_vars/osds.yml
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - osa_config
+    - ceph_config_yaml
+
+- name: Generate /opt/ceph-ansible/group_vars/mons.yml
+  template:
+    src: ceph-ansible/group_vars/mons.yml.j2
+    dest: /opt/ceph-ansible/group_vars/mons.yml
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - osa_config
+    - ceph_config_yaml
+
+
+- name: Copy the site file over
+  copy:
+    remote_src: yes
+    src: /opt/ceph-ansible/site.yml.sample
+    dest: /opt/ceph-ansible/site.yml
+  tags:
+    - osa_config
+    - ceph_config_yaml
+
+

@@ -1,0 +1,37 @@
+# Loop back
+auto lo
+iface lo inet loopback
+
+# Bond slave1
+auto em49
+iface em49 inet manual
+    bond-master bond0
+    bond-primary em49
+
+# Bond slave2
+auto em50
+iface em50 inet manual
+    bond-master bond0
+
+# Bond
+auto bond0
+iface bond0 inet manual
+    bond-slaves em49 em50
+    bond-mode active-backup
+    bond-miimon 100
+    post-up sleep 10
+    post-up /sbin/ip link set dev bond0 mtu 9000
+
+# vlan
+auto br-vlan
+iface br-vlan inet static
+    bridge_stp off
+    bridge_waitport 10
+    bridge_fd 0
+    bridge_ports bond0
+    offload-sg off
+    address {{ ansible_host }}
+    gateway 172.20.40.1
+    netmask 255.255.252.0
+
+source /etc/network/interfaces.d/*.cfg

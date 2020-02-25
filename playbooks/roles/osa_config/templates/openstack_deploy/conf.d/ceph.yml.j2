@@ -1,0 +1,12 @@
+cephrgwdummy_hosts:
+{% for curhost in groups['all'] -%}
+{% if curhost.startswith("ceph") %}
+  {{ curhost.split(".")[0] }}:
+{% for interface in hostvars[curhost].interfaces %}
+{%if interface.subnet.endswith("MGMT") and not interface.subnet.endswith("STOR-MGMT") %}
+    ip: {{ interface.ip }}
+{% endif %}
+{% endfor %}
+{% endif %}
+{%- endfor %}
+

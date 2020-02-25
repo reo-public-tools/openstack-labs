@@ -16,6 +16,8 @@ const globalConfigFile = "/etc/oslabs/oslabs.yml"
 var sysLog *syslog.Writer
 
 
+
+
 // Main func
 func main() {
 
@@ -48,7 +50,9 @@ func main() {
     listCommand   := flag.NewFlagSet("list", flag.ExitOnError)
     deleteCommand := flag.NewFlagSet("delete", flag.ExitOnError)
     showCommand   := flag.NewFlagSet("show", flag.ExitOnError)
+    capCommand    := flag.NewFlagSet("capacity", flag.ExitOnError)
     scratchCommand := flag.NewFlagSet("scratch", flag.ExitOnError)
+    geninvCommand := flag.NewFlagSet("geninv", flag.ExitOnError)
     //checkCommand  := flag.NewFlagSet("check", flag.ExitOnError)
 
     // Create subcommand flag pointers
@@ -63,12 +67,15 @@ func main() {
     // Create subcommand flag pointers
     scratchConfigFilePtr := scratchCommand.String("c", "", "Lab yaml config file")
 
+    // Geninventory subcommand flag pointers
+    geninvLabNamePtr := geninvCommand.String("l", "", "Lab name pull inventory for")
+
 
     // Verify that the subcommand is provided
     // os.Arg[0] is the main command
     // os.Arg[1] is the subcommand
     if len(os.Args) < 2 {
-        fmt.Println("create, check, delete or list subcommand is required")
+        displaySyntax(os.Args[0])
         os.Exit(1)
     }
 
@@ -82,9 +89,17 @@ func main() {
         deleteCommand.Parse(os.Args[2:])
     case "show":
         showCommand.Parse(os.Args[2:])
+    case "geninv":
+        geninvCommand.Parse(os.Args[2:])
+    case "capacity":
+        capCommand.Parse(os.Args[2:])
     case "scratch":
         scratchCommand.Parse(os.Args[2:])
+    case "help":
+        displaySyntax(os.Args[0])
+        os.Exit(1)
     default:
+        displaySyntax(os.Args[0])
         flag.PrintDefaults()
         os.Exit(1)
     }
@@ -95,6 +110,7 @@ func main() {
 
         // Exist out if arg is empty.
         if *configFilePtr == "" {
+            displaySyntax(os.Args[0])
             flag.PrintDefaults()
             os.Exit(1)
         }
@@ -119,6 +135,7 @@ func main() {
 
         // Exist out if arg is empty.
         if *deleteLabNamePtr == "" {
+            displaySyntax(os.Args[0])
             flag.PrintDefaults()
             os.Exit(1)
         }
@@ -135,6 +152,7 @@ func main() {
 
         // Exist out if arg is empty.
         if *showLabNamePtr == "" {
+            displaySyntax(os.Args[0])
             flag.PrintDefaults()
             os.Exit(1)
         }
@@ -146,11 +164,37 @@ func main() {
         }
     }
 
+    // Run geninv if parsed
+    if geninvCommand.Parsed() {
+
+        // Exist out if arg is empty.
+        if *geninvLabNamePtr == "" {
+            displaySyntax(os.Args[0])
+            flag.PrintDefaults()
+            os.Exit(1)
+        }
+
+        // Generate ansible inventory for the specified lab
+        err := GenerateInventory(*geninvLabNamePtr)
+        if err != nil {
+            log.Fatal(err)
+        }
+    }
+
+    // Run list if parsed
+    if capCommand.Parsed() {
+        err := Capacity()
+        if err != nil {
+            log.Fatal(err)
+        }
+    }
+
     // Scratch action used for tested & development
     if scratchCommand.Parsed() {
 
         // Exist out if arg is empty.
         if *scratchConfigFilePtr == "" {
+            displaySyntax(os.Args[0])
             flag.PrintDefaults()
             os.Exit(1)
         }
@@ -162,4 +206,22 @@ func main() {
         }
     }
 
+}
+
+func displaySyntax(progName string) {
+    fmt.Printf("\nSyntax:\n\n")
+    fmt.Printf("    Create a new lab:\n")
+    fmt.Printf("        %s create -c ./path/to/lab_config.yaml\n\n", progName)
+    fmt.Printf("    List labs:\n")
+    fmt.Printf("        %s list\n\n", progName)
+    fmt.Printf("    Show details on existing lab:\n")
+    fmt.Printf("        %s show -l labname\n\n", progName)
+    fmt.Printf("    Generate ansible inventory for an existing lab:\n")
+    fmt.Printf("        %s geninv -l labname\n\n", progName)
+    fmt.Printf("    Delete or relase an existing lab:\n")
+    fmt.Printf("        %s delete -l labname\n\n", progName)
+    fmt.Printf("    Get Ironic Capacity:\n")
+    fmt.Printf("        %s capacity\n\n", progName)
+    fmt.Printf("    Display command syntax:\n")
+    fmt.Printf("        %s help\n\n", progName)
 }

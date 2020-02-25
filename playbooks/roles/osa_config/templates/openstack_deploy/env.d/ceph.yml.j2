@@ -1,0 +1,22 @@
+---
+component_skel:
+  cephrgwdummy:
+    belongs_to:
+      # This is a meta group of a given component type.
+      - cephrgwdummy_all
+container_skel:
+  cephrgwdummy_container:
+    belongs_to:
+      - cephrgwdummy_containers
+    contains:
+      - cephrgwdummy
+    properties:
+      service_name: cephrgwdummy
+      is_metal: true
+physical_skel:
+  cephrgwdummy_containers:
+    belongs_to:
+      - all_containers
+  cephrgwdummy_hosts:
+    belongs_to:
+      - hosts

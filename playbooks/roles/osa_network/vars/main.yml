@@ -1,0 +1,4 @@
+---
+bond_interfaces:
+  - "em49"
+  - "em50"

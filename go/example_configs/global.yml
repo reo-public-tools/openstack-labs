@@ -1,0 +1,23 @@
+##############
+# foreman_url
+##############
+foreman_url: "https://172.20.41.28"
+
+###################################################################################
+# Lab type can be either dynamic or static.
+# These define how the domain is set up in theforman and how
+# the network layer is implemented. 
+#
+# - dynamic: vxlan mesh network created.  No pre-configuration needed.
+# - static: vlan network used by checking out a pre-configured theforeman domain.  
+###################################################################################
+lab_type: "dynamic"
+
+########################################################
+# Openstack cloud used on the openstack client config
+#
+# This must be pre-configured on the device running the
+# lab script.
+########################################################
+openstack_cloud: "phobos"
+

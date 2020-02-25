@@ -1,0 +1,54 @@
+{%- set brname =  item['subnet'] | lower | regex_replace('^lab[0-9]*-','') -%}
+auto br-{{ brname }}
+iface br-{{ brname }} inet static
+    bridge_stp off
+    bridge_waitport 10
+    bridge_fd 0
+    bridge_ports {{ brname }}-mesh
+    address {{ item['ip'] }}
+    netmask {{ subnets[item['subnet']].netmask }}
+    offload-sg off
+
+    # Create the vxlan interface before createing the bridge
+    pre-up ip link add {{ brname }}-mesh type vxlan id {{ subnets[item['subnet']].vxlan }} group {{ domain_parameters['multicast_group'] }} dstport 8472 ttl 4 dev br-vlan
+    pre-up sleep 2
+    up sysctl -w net.ipv4.conf.{{ brname }}-mesh.arp_notify=1
+    up sysctl -w net.ipv4.conf.br-{{ brname }}.arp_notify=1
+
+    # Do some ip config trickery
+    post-up ip link set br-{{ brname }} address $(cat /sys/class/net/br-{{ brname }}/address)
+    post-up ip link set {{ brname }}-mesh up || true
+    down ip link set {{ brname }}-mesh down || true
+
+    # Remove the interface after bringing the bridge down
+    post-down ip link del {{ brname }}-mesh
+
+{% if brname == "lbaas" %}
+    # Add a veth pair for use with host_bind_override
+    post-up ip link add lb-veth-inbr type veth peer name lb-veth-ovrd || true
+    post-up ip link set lb-veth-inbr up
+    post-up ip link set lb-veth-ovrd up
+    post-up brctl addif br-{{ brname }} lb-veth-inbr
+
+    # Tear the veth pair down pre shutdown
+    pre-down brctl delif br-{{ brname }} lb-veth-inbr
+    pre-down ip link set lb-veth-inbr down
+    pre-down ip link set lb-veth-ovrd down
+    pre-down ip link del lb-veth-inbr type veth peer name lb-veth-ovrd || true
+{% endif %}
+{% if brname == "ironic" %}
+    # Add a veth pair for use with host_bind_override
+    post-up ip link add ir-veth-inbr type veth peer name ir-veth-ovrd || true
+    post-up ip link set ir-veth-inbr up
+    post-up ip link set ir-veth-ovrd up
+    post-up brctl addif br-{{ brname }} ir-veth-inbr
+
+    # Tear the veth pair down pre shutdown
+    pre-down brctl delif br-{{ brname }} ir-veth-inbr
+    pre-down ip link set ir-veth-inbr down
+    pre-down ip link set ir-veth-ovrd down
+    pre-down ip link del ir-veth-inbr type veth peer name ir-veth-ovrd || true
+{% endif %}
+
+
+

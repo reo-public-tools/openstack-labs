@@ -1,0 +1,8 @@
+- name: flush bond0 and restart networking
+  shell: ip addr flush bond0 && systemctl restart networking.service
+
+- name: restart networking
+  service:
+    name: networking
+    state: restarted
+  

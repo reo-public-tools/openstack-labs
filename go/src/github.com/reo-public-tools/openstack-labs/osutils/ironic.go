@@ -456,3 +456,5 @@ func JSONStringToNodeData(nodeJSON string, b64decode bool) (IronicNodeDetailsLis
     return retData, err
 
 }
+
+

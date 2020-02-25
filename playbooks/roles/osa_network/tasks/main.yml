@@ -1,0 +1,47 @@
+---
+
+# Apply the primary config
+- name: Applying the template for the primary config
+  template:
+    src: primary.j2
+    dest: /etc/network/interfaces
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - osa_network
+  notify:
+    - flush bond0 and restart networking
+
+
+# Apply the non-primary interfaces
+- name: Set up secondary interfaces(vlan)
+  template:
+    src: secondary.j2
+    dest: "/etc/network/interfaces.d/{{ item['subnet'] | lower | regex_replace('^lab[0-9]*-','') }}.cfg"
+    owner: root
+    group: root
+    mode: '0644'
+  when: item['subnet'] | lower | regex_replace('^lab[0-9]*-','') in ["lbaas","mgmt","storage", "vxlan", "tenant"]
+  when: domain_parameters['type'] == 'vlan'
+  with_items: '{{ interfaces }}'
+  tags:
+    - osa_network
+  notify:
+    - restart networking
+
+# Apply the non-primary interfaces
+- name: Set up secondary interfaces(vxlan)
+  template:
+    src: secondary-vxlan.j2
+    dest: "/etc/network/interfaces.d/{{ item['subnet'] | lower | regex_replace('^lab[0-9]*-','') }}.cfg"
+    owner: root
+    group: root
+    mode: '0644'
+  when: item['subnet'] | lower | regex_replace('^lab[0-9]*-','') in ["lbaas","mgmt","storage", "vxlan", "tenant"]
+  when: domain_parameters['type'] == 'vxlan'
+  with_items: '{{ interfaces }}'
+  tags:
+    - osa_network
+  notify:
+    - restart networking

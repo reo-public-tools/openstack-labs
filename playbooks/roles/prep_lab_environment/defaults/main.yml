@@ -33,6 +33,24 @@ foreman_operating_systems:
     release_name: 'bionic'
     architectures:
       - x86_64
+  - name: "centos-8"
+    description: "CentOS 8"
+    family: "Redhat"
+    major: 8
+    minor: 0
+    password_hash: SHA256
+    release_name: 'centos'
+    architectures:
+      - x86_64
+  - name: "rhel-8"
+    description: "RHEL 8"
+    family: "Redhat"
+    major: 8
+    minor: 0
+    password_hash: SHA256
+    release_name: 'rhel'
+    architectures:
+      - x86_64
 
 
 

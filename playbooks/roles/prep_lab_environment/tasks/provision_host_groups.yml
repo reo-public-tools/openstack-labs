@@ -19,5 +19,5 @@
     root_pass: '{{ item.root_pass }}'
   with_items: '{{ host_groups }}'
   tags:
-    - create_domains
+    - create_hostgroups
 

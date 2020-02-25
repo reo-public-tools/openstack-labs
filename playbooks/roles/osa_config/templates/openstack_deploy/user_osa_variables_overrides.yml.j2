@@ -1,0 +1,160 @@
+# Glance related ceph changes
+glance_notification_driver: noop
+glance_ceph_client: glance
+glance_rbd_store_pool: glance-images
+glance_rbd_store_chunk_size: 8
+
+glance_default_store: swift
+glance_swift_store_auth_version: 1
+glance_swift_store_auth_address: http://{{ domain_parameters['internal_floating_ip'] }}:8080/auth/1.0
+
+glance_additional_stores:
+  - rbd
+  - http
+
+# Nova related ceph changes
+nova_libvirt_images_rbd_pool: ephemeral-vms
+
+# Cinder related ceph changes
+cinder_ceph_client: cinder
+cinder_default_volume_type: rbd
+
+# General Ceph settings
+cephx: true
+ceph_mons: 
+{% for curhost in groups['all'] -%}
+{% if curhost.startswith("ceph") -%}
+{% for interface in hostvars[curhost].interfaces -%}
+{% if interface.subnet.endswith("STORAGE") %}
+  - {{ interface.ip }}
+{% endif %}
+{%- endfor %}
+{% endif %}
+{% endfor %}
+
+
+
+# Haproxy settings
+haproxy_use_keepalived: True
+haproxy_keepalived_external_vip_cidr: {{ domain_parameters['external_floating_ip'] }}/22
+haproxy_keepalived_internal_vip_cidr: {{ domain_parameters['internal_floating_ip'] }}/22
+haproxy_keepalived_external_interface: br-vlan
+haproxy_keepalived_internal_interface: br-mgmt
+haproxy_bind_on_non_local: False
+
+keepalived_use_latest_stable: True
+{% set nsgw = namespace(mgmt_gateway="") -%}
+{% for curhost in groups['all'] -%}
+{% if curhost.startswith("ceph") -%}
+{% for interface in hostvars[curhost].interfaces -%}
+{% if interface.subnet.endswith("MGMT") and not interface.subnet.endswith("STOR-MGMT")  %}
+{% set nsgw.mgmt_gateway = subnets[interface.subnet].gateway %}
+{% endif %}
+{%- endfor %}
+{% endif %}
+{% endfor %}
+keepalived_ping_address: {{ nsgw.mgmt_gateway }}
+keepalived_ping_address:
+keepalived_ping_count: 2
+keepalived_bind_on_non_local: True
+
+keepalived_scripts:
+  haproxy_check_script:
+    check_script: "kill -0 `cat /var/run/haproxy.pid`"
+    timeout: 2
+  pingable_check_script:
+    check_script: "/bin/ping -c {{ '{{' }} keepalived_ping_count {{ '}}' }} {{ '{{' }} keepalived_ping_address {{ '}}' }} 1>&2"
+    interval: "{{ '{{' }} keepalived_ping_interval {{ '}}' }}"
+    fall: 2
+    rise: 4
+    timeout: 5
+
+# need to redefine it all to add one...
+haproxy_extra_services:
+  - service:
+      haproxy_service_name: ceph_rgw
+      haproxy_backend_nodes: "{{ '{{' }} groups['cephrgwdummy_hosts'] {{ '}}' }}"
+      haproxy_ssl: True
+      haproxy_port: 8080
+      haproxy_balance_alg: source
+      haproxy_balance_type: http
+      haproxy_backend_options:
+        - "httpchk HEAD /"
+  - service:
+      haproxy_service_name: elastic-logstash
+      haproxy_ssl: False
+      haproxy_backend_nodes: "{{ '{{' }} groups['Kibana'] | default([]) {{ '}}' }}"  # Kibana nodes are also Elasticsearch coordination nodes
+      haproxy_port: 9201  # This is set using the "elastic_hap_port" variable
+      haproxy_check_port: 9200  # This is set using the "elastic_port" variable
+      haproxy_backend_port: 9200  # This is set using the "elastic_port" variable
+      haproxy_balance_type: tcp
+  - service:
+      haproxy_service_name: Kibana
+      haproxy_ssl: False
+      haproxy_backend_nodes: "{{ '{{' }} groups['Kibana'] | default([]) {{ '}}' }}"
+      haproxy_port: 81  # This is set using the "Kibana_nginx_port" variable
+      haproxy_balance_type: tcp
+  - service:
+      haproxy_service_name: apm-server
+      haproxy_ssl: False
+      haproxy_backend_nodes: "{{ '{{' }} groups['apm-server'] | default([]) {{ '}}' }}"
+      haproxy_port: 8200 # this is set using the "apm_port" variable
+      haproxy_balance_type: tcp
+
+
+
+
+# ironic configs
+ironic_swift_temp_url_secret_key: mytemptestkey
+
+
+
+
+
+
+##########
+# Octavia
+##########
+# Name of the Octavia management network in Neutron
+octavia_neutron_management_network_name: lbaas-mgmt
+
+# Name of the provider net in the system
+octavia_provider_network_name: lbaas
+
+# this is the name used in openstack_user_config.yml with '_address' added
+octavia_container_network_name: lbaas_address
+
+# Network type
+octavia_provider_network_type: flat
+
+# Network CIDR
+octavia_management_net_subnet_cidr: 
+{%- for cursubnet in subnets -%}
+{% if cursubnet.endswith("LBAAS") %}
+ {{ subnets[cursubnet]['network_address'] }}
+{% endif %}
+{%- endfor %}
+
+# BEGIN ANSIBLE MANAGED BLOCK
+
+# Octavia certs - overwrite if you bring your own certs
+#octavia_ca_private_key: "/var/tmp/certs/private/cakey.pem"
+#octavia_ca_private_key_passphrase: "changeme"
+#octavia_ca_certificate: "/var/tmp/certs/ca_server_01.pem"
+#octavia_client_ca: "/var/tmp/certs/ca_01.pem"
+#octavia_client_cert: "/var/tmp/certs/client.pem"
+#octavia_server_ca: "/var/tmp/certs/ca_server_01.pem"
+
+
+# activate octavia
+octavia_v2: True
+octavia_v1: "False"
+octavia_tls_listener_enabled: False # we don't have Barbican
+octavia_legacy_policy: False # We will always add the role to the K8 servcie user
+
+# Octavia HA settings
+octavia_loadbalancer_topology: ACTIVE_STANDBY
+octavia_spare_amphora_pool_size: 0
+octavia_enable_anti_affinity: True
+# make TRUE to gain SSH access to the amphora
+octavia_ssh_enabled: False # Chnage to true if ssh debugging is needed

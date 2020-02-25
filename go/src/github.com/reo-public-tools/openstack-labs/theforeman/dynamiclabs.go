@@ -389,7 +389,7 @@ func CreateVXLANSubnets(url string, session string, domainInfo Domain, globalPar
                 From: curFrom,
                 To: curTo,
                 Mtu: 9000,
-                Ipam: "Internal DB",
+                Ipam: "Random DB",
                 BootMode: "Static",
                 DomainIds: []int{ domainInfo.ID },
                 SubnetParametersAttributes: []SubnetParametersAttributes {

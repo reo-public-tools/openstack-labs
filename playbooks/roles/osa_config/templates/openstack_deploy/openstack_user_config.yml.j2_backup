@@ -1,0 +1,184 @@
+---
+cidr_networks:
+  container: {{ global_ksmeta.container_network }}
+  tunnel: {{ global_ksmeta.tunnel_network }}
+  storage: {{ global_ksmeta.storage_network }}
+  tftp: {{ global_ksmeta.ironic_network }}
+  ironic-ipmi: {{ global_ksmeta.ipmi_network }}
+  # You guys had the wrong network for lbaas in eureka.  This should fix it.
+  lbaas: {{ global_ksmeta.lbaas_network }}
+
+used_ips:
+  - "{{ '.'.join(global_ksmeta.container_network.split('.')[0:3]) }}.1,{{ '.'.join(global_ksmeta.container_network.split('.')[0:2]) }}.{{ 2 + global_ksmeta.container_network.split('.')[2] | int }}.255"
+  - "{{ '.'.join(global_ksmeta.tunnel_network.split('.')[0:3]) }}.1,{{ '.'.join(global_ksmeta.tunnel_network.split('.')[0:2]) }}.{{ 2 + global_ksmeta.tunnel_network.split('.')[2] | int }}.255"
+  - "{{ '.'.join(global_ksmeta.storage_network.split('.')[0:3]) }}.1,{{ '.'.join(global_ksmeta.storage_network.split('.')[0:2]) }}.{{ 2 + global_ksmeta.storage_network.split('.')[2] | int }}.255"
+  - "{{ '.'.join(global_ksmeta.ironic_network.split('.')[0:3]) }}.1,{{ '.'.join(global_ksmeta.ironic_network.split('.')[0:2]) }}.{{ 2 + global_ksmeta.ironic_network.split('.')[2] | int }}.255"
+  - "{{ '.'.join(global_ksmeta.ipmi_network.split('.')[0:3]) }}.1,{{ '.'.join(global_ksmeta.ipmi_network.split('.')[0:3]) }}.255"
+  - "{{ '.'.join(global_ksmeta.lbaas_network.split('.')[0:3]) }}.1,{{ '.'.join(global_ksmeta.lbaas_network.split('.')[0:3]) }}.50"
+  - "{{ global_ksmeta.lbaas_floating_ip }}"
+  - "{{ global_ksmeta.external_floating_ip }}"
+  - "{{ global_ksmeta.internal_floating_ip }}"
+
+global_overrides:
+  external_lb_vip_address: {{ global_ksmeta.external_floating_ip }}
+  internal_lb_vip_address: {{ global_ksmeta.internal_floating_ip  }}
+  tunnel_bridge: "br-vxlan"
+  management_bridge: "br-mgmt"
+  provider_networks:
+    - network:
+        container_bridge: "br-mgmt"
+        container_type: "veth"
+        container_interface: "eth1"
+        ip_from_q: "container"
+        type: "raw"
+        group_binds:
+          - all_containers
+          - hosts
+        is_container_address: true
+        is_ssh_address: true
+    - network:
+        container_bridge: "br-vxlan"
+        container_type: "veth"
+        container_interface: "eth10"
+        ip_from_q: "tunnel"
+        type: "vxlan"
+        range: "1:1000"
+        net_name: "vxlan"
+        group_binds:
+          - neutron_linuxbridge_agent
+    - network:
+        container_bridge: "br-vlan"
+        container_type: "veth"
+        container_interface: "eth11"
+        type: "vlan"
+        range: "{{ global_ksmeta.neutron_insidenet_vlan }}:{{ global_ksmeta.neutron_insidenet_vlan}},{{ global_ksmeta.neutron_gatewaynet_vlan }}:{{ global_ksmeta.neutron_gatewaynet_vlan }}"
+        net_name: "vlan"
+        group_binds:
+          - neutron_linuxbridge_agent
+    - network:
+        container_bridge: "br-ironic"
+        container_type: "veth"
+        container_interface: "eth20"
+        ip_from_q: "tftp"
+        type: "flat"
+        net_name: "GATEWAY_NET"
+        host_bind_override: "ir-veth-ovrd"
+        group_binds:
+          - neutron_linuxbridge_agent
+          - ironic_all
+          - ironic_api
+    - network:
+        container_bridge: "br-storage"
+        container_type: "veth"
+        container_interface: "eth2"
+        ip_from_q: "storage"
+        type: "raw"
+        group_binds:
+          - glance_api
+          - cinder_api
+          - cinder_volume
+          - nova_compute
+          #- swift_proxy
+    - network:
+        container_bridge: "br-ironic-ipmi"
+        container_type: "veth"
+        container_interface: "eth_ipmi"
+        ip_from_q: "ironic-ipmi"
+        type: "raw"
+        group_binds:
+          - ironic-infra_hosts
+    - network:
+        container_bridge: "br-lbaas"
+        container_type: "veth"
+        container_interface: "eth14"
+        ip_from_q: "lbaas"
+        type: "flat"
+        host_bind_override: "lb-veth-ovrd"
+        net_name: "lbaas"
+        group_binds:
+          - neutron_linuxbridge_agent
+          - octavia-worker
+          - octavia-housekeeping
+          - octavia-health-manager
+{% for cursection in ['shared-infra_hosts', 'repo-infra_hosts', 'os-infra_hosts', 'identity_hosts'] %}
+
+{{ cursection }}:
+{% for curhost in groups['all'] %}
+{% if 'infra' in hostvars[curhost].cobbler.name %}
+  {{ hostvars[curhost].cobbler.name }}:
+    ip: {{ hostvars[curhost].cobbler.mgmt_parameters.br_mgmt_ip }}
+{% endif %}
+{% endfor %}
+{% endfor %}
+
+compute_hosts:
+{% for curhost in groups['all'] %}
+{% if hostvars[curhost].cobbler.mgmt_parameters.role == "compute" %}
+  {{ hostvars[curhost].cobbler.name }}:
+    ip: {{ hostvars[curhost].cobbler.mgmt_parameters.br_mgmt_ip }}
+{% endif %}
+{% endfor %}
+
+storage-infra_hosts:
+{% for curhost in groups['all'] %}
+{% if hostvars[curhost].cobbler.mgmt_parameters.role == "infra" %}
+  {{ hostvars[curhost].cobbler.name }}:
+    ip: {{ hostvars[curhost].cobbler.mgmt_parameters.br_mgmt_ip }}
+{% endif %}
+{% endfor %}
+
+storage_hosts:
+{% for curhost in groups['all'] %}
+{% if 'infra' in hostvars[curhost].cobbler.name %}
+  {{ hostvars[curhost].cobbler.name }}:
+    ip: {{ hostvars[curhost].cobbler.mgmt_parameters.br_mgmt_ip }}
+    container_vars:
+      cinder_backends:
+        limit_container_types: cinder_volume
+        ceph:
+          volume_driver: cinder.volume.drivers.rbd.RBDDriver
+          rbd_pool: volumes
+          rbd_ceph_conf: /etc/ceph/ceph.conf
+          rbd_flatten_volume_from_snapshot: 'false'
+          rbd_max_clone_depth: 5
+          rbd_store_chunk_size: 4
+          rados_connect_timeout: -1
+          glance_api_version: 2
+          volume_backend_name: ceph
+          rbd_user: "{{ '{{' }} cinder_ceph_client {{ '}}' }}"
+          rbd_secret_uuid: "{{ '{{' }} cinder_ceph_client_uuid {{ '}}' }}"
+{% endif %}
+{% endfor %}
+
+haproxy_hosts:
+{% for curhost in groups['all'] %}
+{% if 'infra' in hostvars[curhost].cobbler.name %}
+  {{ hostvars[curhost].cobbler.name }}:
+    ip: {{ hostvars[curhost].cobbler.mgmt_parameters.br_mgmt_ip }}
+{% endif %}
+{% endfor %}
+
+network_hosts:
+{% for curhost in groups['all'] %}
+{% if 'infra' in hostvars[curhost].cobbler.name %}
+  {{ hostvars[curhost].cobbler.name }}:
+    ip: {{ hostvars[curhost].cobbler.mgmt_parameters.br_mgmt_ip }}
+{% endif %}
+{% endfor %}
+
+log_hosts:
+{% for curhost in groups['all'] %}
+{% if hostvars[curhost].cobbler.mgmt_parameters.role == "ceph" %}
+  {{ hostvars[curhost].cobbler.name }}:
+    ip: {{ hostvars[curhost].cobbler.mgmt_parameters.br_mgmt_ip }}
+{% endif %}
+{% endfor %}
+
+cephrgwdummy_hosts:
+{% for curhost in groups['all'] %}
+{% if 'ceph' in hostvars[curhost].cobbler.name %}
+  storage01_ceph_only:
+    ip: {{ hostvars[curhost].cobbler.mgmt_parameters.br_storage_ip }}
+{% endif %}
+{% endfor %}
+

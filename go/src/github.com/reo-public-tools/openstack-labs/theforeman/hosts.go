@@ -168,7 +168,6 @@ type Permissions struct {
         PuppetrunHosts bool `json:"puppetrun_hosts,omitempty"`
 }
 
-
 // Structures used to create a new host
 type HostPostData struct {
         OrganizationID int           `json:"organization_id,omitempty"`
@@ -255,6 +254,13 @@ type NetInterface struct {
         BondOptions     string   `json:"bond_options,omitempty"`
 }
 
+// Structures used to create a new interface
+type InterfacePostData struct {
+        OrganizationID int     `json:"organization_id,omitempty"`
+        LocationID     int     `json:"location_id,omitempty"`
+        HostID         string  `json:"location_id,omitempty"`
+        Interface NetInterface `json:"interface"`
+}
 
 // Create a new host
 func CreateHost(url string,
@@ -304,6 +310,7 @@ func CreateHost(url string,
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
        return Host{}, err
     }
+
     // Set up some subnet name -> id mappings 
     subnetmap := make(map[string]int)
     for _, curSubnet := range domainInfo.Subnets {
@@ -445,9 +452,6 @@ func CreateHost(url string,
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
         return Host{}, fmt.Errorf("%s %s", sysLogPrefix, string(body))
     }
-
-    // delete me
-    //fmt.Println(string(body))
 
     // Convert the body to a byte array
     bytes := []byte(body)
@@ -686,5 +690,114 @@ func DeleteHost(url string, session string, hostID interface{}) (error) {
     }
 
     return nil
+}
+
+
+func AddBridgeInterface(url string, session string, identifier string, hostName interface{}, domainID int, subnetID int) (NetInterfaceRet, error) {
+
+
+    sysLogPrefix := "theforeman(package).hosts(file).AddBridgeInterface(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Creating %s bridge interface for host %s", sysLogPrefix, identifier, hostName))
+
+    // Init the return value
+    var queryResults NetInterfaceRet
+
+    // Get a struct populated with common parameter data
+    globalParams, err := GetGlobalParameters(url, session)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+       return NetInterfaceRet{}, err
+    }
+
+    // Convert the location name to id for host creation
+    locationID, err := ConvLocNameToID(url, session, globalParams.LabLocationName)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+       return NetInterfaceRet{}, err
+    }
+    fmt.Println(locationID)
+
+    // Convert the organization name to id for host creation
+    organizationID, err := ConvOrgNameToID(url, session, globalParams.LabOrgName)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+       return NetInterfaceRet{}, err
+    }
+    fmt.Println(organizationID)
+
+    // Fill out the data structure to be used for creating the domain
+    newInterfaceStruct := InterfacePostData{
+//        OrganizationID: organizationID,
+//        LocationID: locationID,
+        Interface: NetInterface{
+                    Identifier: identifier,
+                    DomainID: domainID,
+                    SubnetID: subnetID,
+                    Primary: false,
+                    Managed: false,
+                    Provision: false,
+                    Type: "bridge",
+        },
+    }
+//        HostID: hostName.(string),
+
+    // Convert data to json
+    postData, err := json.Marshal(newInterfaceStruct)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return NetInterfaceRet{}, err
+    }
+
+    // Set the query url
+    var requesturl string = fmt.Sprintf("%s/api/hosts/%v/interfaces", url, hostName)
+
+    // Set up the basic request from the url and body
+    req, err := http.NewRequest("POST", requesturl, bytes.NewBufferString(string(postData)))
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return NetInterfaceRet{}, err
+    }
+
+    // Make sure we are using the proper content type for the configs api
+    req.Header.Set("Content-Type", "application/json")
+    req.Header.Set("Accept", "application/json,version=2")
+
+    // Set the session Cookie header
+    req.Header.Set("Cookie", fmt.Sprintf("_session_id=%s", session))
+
+    // Disable tls verify
+    tr := &http.Transport{
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+    }
+
+    // Set up the http client and do the request
+    client := &http.Client{Transport: tr}
+    resp, err := client.Do(req)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return NetInterfaceRet{}, err
+    }
+    defer resp.Body.Close()
+
+
+    // Read in the body and check status
+    body, _ := ioutil.ReadAll(resp.Body)
+    if resp.StatusCode != 201 {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+        return NetInterfaceRet{}, fmt.Errorf("%s %s", sysLogPrefix, string(body))
+    }
+
+    // Convert the body to a byte array
+    bytes := []byte(body)
+
+    // Unmarshall the json byte array into a struct
+    err = json.Unmarshal(bytes, &queryResults)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return NetInterfaceRet{}, err
+    }
+
+    return queryResults, nil
+
 }
 

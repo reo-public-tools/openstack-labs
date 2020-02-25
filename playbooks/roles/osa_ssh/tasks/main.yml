@@ -1,0 +1,44 @@
+- name: See if ssh key exists locally
+  stat:
+    path: ./ssh_keys/{{ domain_name }}
+  register: st
+  delegate_to: localhost
+  run_once: true
+  tags:
+    - osa_ssh
+
+- name: Generate an ssh key locally
+  shell: ssh-keygen -f ./ssh_keys/{{ domain_name }} -N '' && chmod 644 ./ssh_keys/{{ domain_name }}
+  when: st.stat.isreg is not defined
+  delegate_to: localhost
+  run_once: true
+  tags:
+    - osa_ssh
+
+- name: Copy the private key
+  copy:
+    dest: /root/.ssh/id_rsa
+    src: ./ssh_keys/{{ domain_name }}
+    owner: root
+    group: root
+    mode: '0600'
+  tags:
+    - osa_ssh
+
+- name: Copy the public key
+  copy:
+    dest: /root/.ssh/id_rsa.pub
+    src: ./ssh_keys/{{ domain_name }}.pub
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - osa_ssh
+
+- name: Set up the root authorized_key with the new key
+  authorized_key:
+    user: root
+    state: present
+    key: "{{ lookup('file', './ssh_keys/{{ domain_name }}.pub') }}"
+  tags:
+    - osa_ssh

@@ -101,7 +101,7 @@ static_labs:
         subnet_type: "IPv4"
         subnet_network: "172.20.64.0"
         subnet_mask: "255.255.252.0"
-        subnet_ipam: "Internal DB"
+        subnet_ipam: "Random DB"
         subnet_dhcp_from: "172.20.64.50"
         subnet_dhcp_to: "172.20.64.255"
         subnet_gateway: "172.20.64.1"
@@ -112,7 +112,7 @@ static_labs:
         subnet_type: "IPv4"
         subnet_network: "172.20.68.0"
         subnet_mask: "255.255.252.0"
-        subnet_ipam: "Internal DB"
+        subnet_ipam: "Random DB"
         subnet_dhcp_from: "172.20.68.50"
         subnet_dhcp_to: "172.20.68.255"
         subnet_gateway: "172.20.68.1"
@@ -123,7 +123,7 @@ static_labs:
         subnet_type: "IPv4"
         subnet_network: "172.20.72.0"
         subnet_mask: "255.255.252.0"
-        subnet_ipam: "Internal DB"
+        subnet_ipam: "Random DB"
         subnet_dhcp_from: "172.20.72.50"
         subnet_dhcp_to: "172.20.72.255"
         subnet_gateway: "172.20.72.1"
@@ -134,7 +134,7 @@ static_labs:
         subnet_type: "IPv4"
         subnet_network: "172.20.76.0"
         subnet_mask: "255.255.252.0"
-        subnet_ipam: "Internal DB"
+        subnet_ipam: "Random DB"
         subnet_dhcp_from: "172.20.76.50"
         subnet_dhcp_to: "172.20.76.255"
         subnet_gateway: "172.20.76.1"
@@ -145,7 +145,7 @@ static_labs:
         subnet_type: "IPv4"
         subnet_network: "172.20.80.0"
         subnet_mask: "255.255.252.0"
-        subnet_ipam: "Internal DB"
+        subnet_ipam: "Random DB"
         subnet_dhcp_from: "172.20.80.50"
         subnet_dhcp_to: "172.20.80.255"
         subnet_gateway: "172.20.80.1"
@@ -156,7 +156,7 @@ static_labs:
         subnet_type: "IPv4"
         subnet_network: "172.20.84.0"
         subnet_mask: "255.255.252.0"
-        subnet_ipam: "Internal DB"
+        subnet_ipam: "Random DB"
         subnet_dhcp_from: "172.20.84.50"
         subnet_dhcp_to: "172.20.84.255"
         subnet_gateway: "172.20.84.1"
@@ -167,7 +167,7 @@ static_labs:
         subnet_type: "IPv4"
         subnet_network: "172.20.88.0"
         subnet_mask: "255.255.252.0"
-        subnet_ipam: "Internal DB"
+        subnet_ipam: "Random DB"
         subnet_dhcp_from: "172.20.88.50"
         subnet_dhcp_to: "172.20.88.255"
         subnet_gateway: "172.20.88.1"
@@ -203,12 +203,25 @@ foreman_compute_resources_openstack:
         uuid: "127e41bd-eb08-4214-bd58-d6b2d3a63ec1"
         username: "ubuntu"
         user_data: true
+      - name: "baremetal-centos-8"
+        architecture: "x86_64"
+        operatingsystem: "CentOS 8"
+        uuid: "adb16d8f-d31f-4053-b7d5-3e38c0e9b010"
+        username: "cloud-user"
+        user_data: true
+      - name: "baremetal-rhel-8"
+        architecture: "x86_64"
+        operatingsystem: "RHEL 8"
+        uuid: "1c6263a9-148a-4cec-bc97-83c96ce04bda"
+        username: "cloud-user"
+        user_data: true
 
 # List used to associate custom provisioning templates to
 foreman_provisioning_template_operating_systems:
   - "Ubuntu Xenial"
   - "Ubuntu Bionic"
-
+  - "CentOS 8"
+  - "RHEL 8"
 
 ##################################################################
 # Info for compute profiles
@@ -289,6 +302,78 @@ foreman_compute_profiles:
           boot_from_volume: 'false'
           size_gb: ''
           scheduler_hint_filter: ''
+  - name: "ironic-standard_baremetal-centos-8"
+    compute_attributes: 
+      - compute_resource: "phobos-int.rpc.rackspace.com"
+        vm_attrs:
+          flavor_ref: '9'
+          availability_zone: "nova"
+          image_ref: "adb16d8f-d31f-4053-b7d5-3e38c0e9b010"
+          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
+          security_groups:
+          - ''
+          - default
+          nics:
+          - ''
+          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
+          network: ''
+          boot_from_volume: 'false'
+          size_gb: ''
+          scheduler_hint_filter: ''
+  - name: "ironic-storage-perf_baremetal-centos-8"
+    compute_attributes: 
+      - compute_resource: "phobos-int.rpc.rackspace.com"
+        vm_attrs:
+          flavor_ref: '14'
+          availability_zone: "nova"
+          image_ref: "adb16d8f-d31f-4053-b7d5-3e38c0e9b010"
+          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
+          security_groups:
+          - ''
+          - default
+          nics:
+          - ''
+          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
+          network: ''
+          boot_from_volume: 'false'
+          size_gb: ''
+          scheduler_hint_filter: ''
+  - name: "ironic-standard_baremetal-rhel-8"
+    compute_attributes: 
+      - compute_resource: "phobos-int.rpc.rackspace.com"
+        vm_attrs:
+          flavor_ref: '9'
+          availability_zone: "nova"
+          image_ref: "1c6263a9-148a-4cec-bc97-83c96ce04bda"
+          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
+          security_groups:
+          - ''
+          - default
+          nics:
+          - ''
+          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
+          network: ''
+          boot_from_volume: 'false'
+          size_gb: ''
+          scheduler_hint_filter: ''
+  - name: "ironic-storage-perf_baremetal-rhel-8"
+    compute_attributes: 
+      - compute_resource: "phobos-int.rpc.rackspace.com"
+        vm_attrs:
+          flavor_ref: '14'
+          availability_zone: "nova"
+          image_ref: "1c6263a9-148a-4cec-bc97-83c96ce04bda"
+          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
+          security_groups:
+          - ''
+          - default
+          nics:
+          - ''
+          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
+          network: ''
+          boot_from_volume: 'false'
+          size_gb: ''
+          scheduler_hint_filter: ''
         
       
            
@@ -336,6 +421,90 @@ host_groups:
     operatingsystem: "Ubuntu Bionic"
     description: "Generic kubernetes test box running ubuntu bionic on ironic"
     compute_profile: "ironic-standard_baremetal-ubuntu-bionic"
+    compute_resource: "phobos-int.rpc.rackspace.com"
+    environment: "labprod"
+    puppet_proxy: "{{ instance_name }}.localdomain"
+    puppet_ca_proxy: "{{ instance_name }}.localdomain"
+    organizations:
+      - '{{ lab_org_name }}'
+    locations:
+      - '{{ lab_location_name }}'
+    root_pass: "change4me"
+  - name: "osa-ironic-standard-xenial"
+    architecture: "x86_64"
+    operatingsystem: "Ubuntu Xenial"
+    description: "Ironic infra,compute & logging nodes running xenial"
+    compute_profile: "ironic-standard_baremetal-ubuntu-xenial"
+    compute_resource: "phobos-int.rpc.rackspace.com"
+    environment: "labprod"
+    puppet_proxy: "{{ instance_name }}.localdomain"
+    puppet_ca_proxy: "{{ instance_name }}.localdomain"
+    organizations:
+      - '{{ lab_org_name }}'
+    locations:
+      - '{{ lab_location_name }}'
+    root_pass: "change4me"
+  - name: "osa-ironic-storage-xenial"
+    architecture: "x86_64"
+    operatingsystem: "Ubuntu Xenial"
+    description: "Ironic ceph nodes running xenial"
+    compute_profile: "ironic-storage-perf_baremetal-ubuntu-xenial"
+    compute_resource: "phobos-int.rpc.rackspace.com"
+    environment: "labprod"
+    puppet_proxy: "{{ instance_name }}.localdomain"
+    puppet_ca_proxy: "{{ instance_name }}.localdomain"
+    organizations:
+      - '{{ lab_org_name }}'
+    locations:
+      - '{{ lab_location_name }}'
+    root_pass: "change4me"
+  - name: "osa-ironic-standard-bionic"
+    architecture: "x86_64"
+    operatingsystem: "Ubuntu Bionic"
+    description: "Ironic infra,compute & logging nodes running bionic"
+    compute_profile: "ironic-standard_baremetal-ubuntu-bionic"
+    compute_resource: "phobos-int.rpc.rackspace.com"
+    environment: "labprod"
+    puppet_proxy: "{{ instance_name }}.localdomain"
+    puppet_ca_proxy: "{{ instance_name }}.localdomain"
+    organizations:
+      - '{{ lab_org_name }}'
+    locations:
+      - '{{ lab_location_name }}'
+    root_pass: "change4me"
+  - name: "osa-ironic-storage-bionic"
+    architecture: "x86_64"
+    operatingsystem: "Ubuntu Bionic"
+    description: "Ironic ceph nodes running bionic"
+    compute_profile: "ironic-storage-perf_baremetal-ubuntu-bionic"
+    compute_resource: "phobos-int.rpc.rackspace.com"
+    environment: "labprod"
+    puppet_proxy: "{{ instance_name }}.localdomain"
+    puppet_ca_proxy: "{{ instance_name }}.localdomain"
+    organizations:
+      - '{{ lab_org_name }}'
+    locations:
+      - '{{ lab_location_name }}'
+    root_pass: "change4me"
+  - name: "osp-ironic-standard-centos-8"
+    architecture: "x86_64"
+    operatingsystem: "CentOS 8"
+    description: "Undercloud running centos 8"
+    compute_profile: "ironic-standard_baremetal-centos-8"
+    compute_resource: "phobos-int.rpc.rackspace.com"
+    environment: "labprod"
+    puppet_proxy: "{{ instance_name }}.localdomain"
+    puppet_ca_proxy: "{{ instance_name }}.localdomain"
+    organizations:
+      - '{{ lab_org_name }}'
+    locations:
+      - '{{ lab_location_name }}'
+    root_pass: "change4me"
+  - name: "osp-ironic-standard-rhel-8"
+    architecture: "x86_64"
+    operatingsystem: "RHEL 8"
+    description: "Undercloud running rhel 8"
+    compute_profile: "ironic-standard_baremetal-rhel-8"
     compute_resource: "phobos-int.rpc.rackspace.com"
     environment: "labprod"
     puppet_proxy: "{{ instance_name }}.localdomain"

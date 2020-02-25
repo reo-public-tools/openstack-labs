@@ -1,0 +1,5 @@
+---
+
+# rocky
+osa_branch: "stable/rocky" 
+ceph_ansible_branch: "v3.1.12"

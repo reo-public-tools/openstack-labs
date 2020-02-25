@@ -1,0 +1,34 @@
+openstack_config: true
+
+openstack_glance_pool:
+  name: glance-images
+  pg_num: "32"
+  rule_name: ""
+openstack_cinder_pool:
+  name: cinder-volumes
+  pg_num: "512"
+  rule_name: ""
+openstack_nova_pool:
+  name: ephemeral-vms
+  pg_num: "64"
+  rule_name: ""
+openstack_cinder_backup_pool:
+  name: cinder-backup
+  pg_num: "128"
+  rule_name: ""
+openstack_radosgw_data:
+  name: default.rgw.buckets.data
+  pg_num: "128"
+  rule_name: ""
+openstack_radosgw_index:
+  name: default.rgw.buckets.index
+  pg_num: "32"
+  rule_name: ""
+
+openstack_pools:
+  - "{{ '{{' }} openstack_glance_pool {{ '}}' }}"
+  - "{{ '{{' }} openstack_cinder_pool {{ '}}' }}"
+  - "{{ '{{' }} openstack_nova_pool {{ '}}' }}"
+  - "{{ '{{' }} openstack_cinder_backup_pool {{ '}}' }}"
+  - "{{ '{{' }} openstack_radosgw_data {{ '}}' }}"
+  - "{{ '{{' }} openstack_radosgw_index {{ '}}' }}"

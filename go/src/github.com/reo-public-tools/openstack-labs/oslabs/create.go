@@ -3,7 +3,7 @@ package main
 import (
     "fmt"
     "sync"
-    "time"
+//    "time"
     "github.com/reo-public-tools/openstack-labs/theforeman"
     "github.com/reo-public-tools/openstack-labs/osutils"
 )
@@ -199,8 +199,8 @@ func Create(configFile string) (error) {
             } (labConfig.ForemanURL, session, curdomaininfo.Name, hostName, foremanHost.ForemanHostgroup, foremanHost.Role)
 
             // Sleep for a few seconds to give dhcp time to grab an ip.
-            fmt.Printf("Sleeping for %d seconds to give dhcp enough time to pull sequential ip addresses\n", 60)
-            time.Sleep(60 * time.Second)
+            //fmt.Printf("Sleeping for %d seconds to give dhcp enough time to pull sequential ip addresses\n", 60)
+            //time.Sleep(60 * time.Second)
 
         }
     }

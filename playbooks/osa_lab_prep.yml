@@ -1,0 +1,14 @@
+---
+
+- name: Prepare a lab environment's networking config
+  hosts: 'all'
+  roles:
+    - osa_network
+    - osa_ssh
+    - osa_disk
+
+- name: Prepare the osa and ceph configs
+  hosts: 'infra01*'
+  roles:
+    - osa_config
+

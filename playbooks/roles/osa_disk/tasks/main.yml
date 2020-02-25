@@ -1,0 +1,185 @@
+---
+
+###############################################
+# Prep the 2nd disk for openstack lvm volumes
+###############################################
+- name: Partition the data disk for infra nodes
+  parted:
+    device: "/dev/{{ controller_data_disk }}"
+    number: 1
+    state: present
+    flags: [ lvm ]
+    part_type: primary
+    label: gpt
+  tags:
+    - osa_disk
+  when: inventory_hostname.startswith("infra") or 
+        inventory_hostname.startswith("logging") or
+        inventory_hostname.startswith("haproxy") or
+        inventory_hostname.startswith("ceph") or
+        inventory_hostname.startswith("compute")
+
+- name: Create the openstack volume group
+  lvg:
+    vg: 'openstack00'
+    pvs: "/dev/{{ controller_data_disk }}1"
+    pesize: "32"
+  tags:
+    - osa_disk
+  when: inventory_hostname.startswith("infra") or 
+        inventory_hostname.startswith("logging") or
+        inventory_hostname.startswith("haproxy") or
+        inventory_hostname.startswith("ceph") or
+        inventory_hostname.startswith("compute")
+
+###########################
+# Prep /openstack 
+###########################
+- name: Create the volume for the /openstack mount
+  lvol:
+    vg: 'openstack00'
+    lv: 'openstack'
+    size: 100G
+  tags:
+    - osa_disk
+  when: inventory_hostname.startswith("infra") or
+        inventory_hostname.startswith("logging") or
+        inventory_hostname.startswith("haproxy") or
+        inventory_hostname.startswith("ceph") or
+        inventory_hostname.startswith("compute")
+
+- name: Create an ext4 filesystem on the /dev/mapper/openstack00-openstack
+  filesystem:
+    fstype: ext4
+    dev: /dev/mapper/openstack00-openstack
+  tags:
+    - osa_disk
+  when: inventory_hostname.startswith("infra") or
+        inventory_hostname.startswith("logging") or
+        inventory_hostname.startswith("haproxy") or
+        inventory_hostname.startswith("ceph") or
+        inventory_hostname.startswith("compute")
+
+- name: Create the /openstack directory
+  file:
+    path: /openstack
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+  tags:
+    - osa_disk
+  when: inventory_hostname.startswith("infra") or
+        inventory_hostname.startswith("logging") or
+        inventory_hostname.startswith("haproxy") or
+        inventory_hostname.startswith("ceph") or
+        inventory_hostname.startswith("compute")
+
+- name: Mount /openstack and create an fstab entry
+  mount:
+    src: /dev/mapper/openstack00-openstack
+    path: /openstack
+    fstype: ext4
+    opts: defaults
+    state: mounted
+    dump: "0"
+    passno: "2"
+  tags:
+    - osa_disk
+  when: inventory_hostname.startswith("infra") or
+        inventory_hostname.startswith("logging") or
+        inventory_hostname.startswith("haproxy") or
+        inventory_hostname.startswith("ceph") or
+        inventory_hostname.startswith("compute")
+    
+###########################
+# Prep /var/lib/lxc 
+###########################
+- name: Create the volume for the /var/lib/lxc mount
+  lvol:
+    vg: 'openstack00'
+    lv: 'lxc'
+    size: '1.32T'
+  tags:
+    - osa_disk
+  when: inventory_hostname.startswith("infra") or
+        inventory_hostname.startswith("logging")
+
+- name: Create an ext4 filesystem on the /dev/mapper/openstack00-lxc
+  filesystem:
+    fstype: ext4
+    dev: /dev/mapper/openstack00-lxc
+  when: inventory_hostname.startswith("infra") or
+        inventory_hostname.startswith("logging")
+
+- name: Create the /var/lib/lxc directory
+  file:
+    path: /var/lib/lxc
+    owner: root
+    group: root
+    mode: '0700'
+    state: directory
+  tags:
+    - osa_disk
+  when: inventory_hostname.startswith("infra") or
+        inventory_hostname.startswith("logging")
+
+- name: Mount /var/lib/lxc and create an fstab entry
+  mount:
+    src: /dev/mapper/openstack00-lxc
+    path: /var/lib/lxc
+    fstype: ext4
+    opts: defaults
+    state: mounted
+    dump: "0"
+    passno: "0"
+  tags:
+    - osa_disk
+  when: inventory_hostname.startswith("infra") or
+        inventory_hostname.startswith("logging")
+
+
+###########################
+# Prep /var/lib/nova 
+###########################
+- name: Create the volume for the /var/lib/nova mount
+  lvol:
+    vg: 'openstack00'
+    lv: 'nova'
+    size: '1.32T'
+  tags:
+    - osa_disk
+  when: inventory_hostname.startswith("compute")
+
+- name: Create an ext4 filesystem on the /dev/mapper/openstack00-nova
+  filesystem:
+    fstype: ext4
+    dev: /dev/mapper/openstack00-nova
+  tags:
+    - osa_disk
+  when: inventory_hostname.startswith("compute")
+
+- name: Create the /var/lib/nova directory
+  file:
+    path: /var/lib/nova
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+  tags:
+    - osa_disk
+  when: inventory_hostname.startswith("compute")
+
+- name: Mount /var/lib/nova and create an fstab entry
+  mount:
+    src: /dev/mapper/openstack00-nova
+    path: /var/lib/nova
+    fstype: ext4
+    opts: defaults
+    state: mounted
+    dump: "0"
+    passno: "0"
+  tags:
+    - osa_disk
+  when: inventory_hostname.startswith("compute")
+
