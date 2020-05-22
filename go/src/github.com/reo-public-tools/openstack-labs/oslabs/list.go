@@ -51,9 +51,9 @@ func List() (error) {
         for _, param := range domainInfo.Parameters {
             switch pname := param.Name; pname {
             case "type":
-                curType = param.Value
+                curType = param.Value.(string)
             case "in-use":
-                inUse = param.Value
+                inUse = param.Value.(string)
             }
         }
         fmt.Printf("| %-30s | %-7s | %-7s | %-40s |\n", domainInfo.Name, curType, inUse, domainInfo.Fullname)

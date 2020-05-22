@@ -119,7 +119,7 @@ type HostParameters struct {
         Name          string      `json:"name,omitempty"`
         Priority      interface{} `json:"name,omitempty"`
         ID            int         `json:"name,omitempty"`
-        Value         string      `json:"value,omitempty"`
+        Value         interface{} `json:"value,omitempty"`
         ParameterType string      `json:"parameter_type,omitempty"`
         CreatedAt     string      `json:"created_at,omitempty"`
         UpdatedAt     string      `json:"updated_at,omitempty"`

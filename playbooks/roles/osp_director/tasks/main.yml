@@ -1,0 +1,10 @@
+---
+- include: rhn.yml
+
+- include: network.yml 
+
+- include: disk.yml 
+
+- include: virt_setup.yml 
+
+- include: dci_variable_files.yml

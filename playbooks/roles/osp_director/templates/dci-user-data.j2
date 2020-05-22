@@ -1,0 +1,31 @@
+#cloud-config
+ 
+groups:
+  - dci
+ 
+users:
+  - name: dci
+    gecos: DCI User
+    primary_group: dci
+    groups: wheel
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    lock_password: true
+    ssh_authorized_keys:
+      - "{{ rootsshpubkey }}"
+      - "{{ dcisshpubkey }}"
+
+rh_subscription:
+  username: "{{ rhn_user }}"
+  password: "{{ rhn_pass }}"
+  add-pool: 
+    - "{{ rhn_pool_id }}"
+  enable-repo:
+    - "rhel-7-server-rpms"
+    - "rhel-7-server-optional-rpms"
+    - "rhel-7-server-extras-rpms"
+
+runcmd:
+  - yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+  - yum install -y https://packages.distributed-ci.io/dci-release.el7.noarch.rpm
+  - yum install -y dci-openstack-agent
+

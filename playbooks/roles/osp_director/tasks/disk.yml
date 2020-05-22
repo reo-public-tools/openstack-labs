@@ -1,0 +1,73 @@
+---
+
+- name: Partition the data disk
+  parted:
+    device: "/dev/{{ data_disk }}"
+    number: 1
+    state: present
+    flags: [ lvm ]
+    part_type: primary
+    label: gpt
+  tags:
+    - disk
+
+- name: Create the virt volume group
+  lvg:
+    vg: 'virt'
+    pvs: "/dev/{{ data_disk }}1"
+    pesize: "32"
+  tags:
+    - disk
+
+- name: Create the rhosp_virt logical volume
+  lvol:
+    vg: 'virt'
+    lv: 'rhosp_virt'
+    size: '100%VG'
+  tags:
+    - disk
+
+- name: Create an xfs filesystem on the /dev/mapper/openstack00-openstack
+  filesystem:
+    fstype: xfs
+    dev: /dev/mapper/virt-rhosp_virt
+  tags:
+    - disk
+
+- name: Create the /rhosp_virt directory
+  file:
+    path: /rhosp_virt
+    owner: root
+    group: root
+    mode: '0755'
+    state: directory
+  tags:
+    - disk
+
+- name: Mount /rhosp_virt and create an fstab entry
+  mount:
+    src: /dev/mapper/virt-rhosp_virt
+    path: /rhosp_virt
+    fstype: xfs
+    opts: defaults
+    state: mounted
+    dump: "0"
+    passno: "2"
+  tags:
+    - disk
+
+- name: Set up an selinux rule for it to use the virt_image_t context
+  sefcontext:
+    target: '/rhosp_virt(/.*)?'
+    ftype: a
+    setype: virt_image_t
+    state: present
+  tags:
+    - disk
+
+- name: Run a restorecon on it
+  command: restorecon -Rv /rhosp_virt
+  tags:
+    - disk
+
+

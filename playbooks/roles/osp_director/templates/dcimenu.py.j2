@@ -1,0 +1,23 @@
+#!/bin/python3
+# Quick menu to manage the DCI environment
+# Author: Kaz
+from cursesmenu import *
+from cursesmenu.items import *
+import signal
+
+#Disable Ctrl C
+signal.signal(signal.SIGINT, signal.SIG_IGN)
+signal.signal(signal.SIGTSTP, signal.SIG_IGN)
+
+#Create a menu
+menu = CursesMenu("DCI Management")
+command_item1 = CommandItem("Log into Director VM",  "/usr/bin/ssh -o StrictHostKeyChecking=no stack@undercloudvm")
+command_item2 = CommandItem("Log into DCI Agent VM",  "/usr/bin/ssh -o StrictHostKeyChecking=no dci@dci")
+command_item3 = CommandItem("Rollback Director VM",  "sudo /usr/bin/virsh snapshot-revert directorvm.{{ domain_name }} directorvm_revert_snap")
+#command_item4 = CommandItem("Rollback DCI Agent VM",  "/usr/local/bin/rollback.sh -n dci-agent")
+menu.append_item(command_item1)
+menu.append_item(command_item2)
+menu.append_item(command_item3)
+#menu.append_item(command_item4)
+menu.show()
+

@@ -1,0 +1,76 @@
+---
+- name: Disable NetworkManager
+  systemd:
+    name: NetworkManager
+    enabled: no
+    state: stopped
+  tags:
+    - network
+
+- name: Enable the network service
+  systemd:
+    name: network
+    enabled: yes
+    state: started
+  tags:
+    - network
+
+- name: Create the bridge for the vlan trunks
+  template:
+    src: br-trunk.j2
+    dest: /etc/sysconfig/network-scripts/ifcfg-br-trunk
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - network
+  notify:
+    - restart networking
+
+
+- name: Set the default gateway and gateway device
+  template:
+    src: network.j2
+    dest: /etc/sysconfig/network
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - network
+  notify:
+    - restart networking
+
+- name: Set up the bond slave configs
+  template:
+    src: bond-slave.j2
+    dest: "/etc/sysconfig/network-scripts/ifcfg-{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  with_items: '{{ bond_interfaces }}'
+  tags:
+    - network
+  notify:
+    - restart networking
+
+- name: Set up bond0
+  template:
+    src: bond0.j2
+    dest: "/etc/sysconfig/network-scripts/ifcfg-bond0"
+    owner: root
+    group: root
+    mode: '0644'
+  tags:
+    - network
+  notify:
+    - restart networking
+
+- name: Enable ip forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    sysctl_set: yes
+    state: present
+    reload: yes
+  tags:
+    - network

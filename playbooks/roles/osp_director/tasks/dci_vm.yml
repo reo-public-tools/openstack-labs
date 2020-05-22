@@ -1,0 +1,179 @@
+---
+#########################
+# Unsubscribe on recreate
+#########################
+- name: Pull the ip address for the host
+  shell: virsh domifaddr dci.{{ domain_name }} | awk '/vnet/{print $4}' | awk -F '/' '{print $1}'
+  register: dciipchk
+  when: dci_recreate_vm
+  tags:
+    - virt_dci
+
+- name: Unregister the node
+  shell: |
+    ssh -o StrictHostKeyChecking=no \
+     dci@"{{ dciipchk.stdout }}" \
+     "sudo subscription-manager remove --all; \
+      sudo subscription-manager unregister; \
+      sudo subscription-manager clean"
+  when: dci_recreate_vm
+  tags:
+    - virt_dci
+  
+
+####################
+# Prep the image
+####################
+- name: Download the dci agent vm image
+  get_url:
+    url: '{{ dci_image_url }}'
+    dest: "/rhosp_virt/{{ dci_image_url.split('/')[-1] }}"
+  tags:
+    - virt_dci
+
+- name: Destroy vm if dci_recreate_vm is set
+  shell: |
+    virsh destroy dci.{{ domain_name }}
+    virsh undefine dci.{{ domain_name }}
+    rm -f /rhosp_virt/dci.qcow2
+  when: dci_recreate_vm
+
+- name: Make a copy of the base image for the dci vm
+  shell: cp -p /rhosp_virt/{{ dci_image_url.split('/')[-1] }} /rhosp_virt/dci.qcow2
+  args:
+    creates: /rhosp_virt/dci.qcow2
+  tags:
+    - virt_dci
+
+- name: Check if the vm is already running
+  shell: virsh dominfo dci.{{ domain_name }}
+  ignore_errors: yes
+  register: dcidomchk
+  tags:
+    - virt_dci
+
+- name: Check the dci image size
+  shell: qemu-img info /rhosp_virt/dci.qcow2 | awk '/^virtual size/{print $3}' | grep {{ dci_vm_size }}
+  ignore_errors: yes
+  register: dciimgchk
+  when: dcidomchk.rc != 0
+  tags:
+    - virt_dci
+
+- name: Resize the dci image
+  shell: qemu-img resize /rhosp_virt/dci.qcow2 "{{ dci_vm_size }}"
+  when: dcidomchk.rc != 0 and dciimgchk.rc != 0  
+  tags:
+    - virt_dci
+
+#####################################
+# Prep the configdrive for cloud-init
+#####################################
+
+- name: Check for existing dci config drive
+  stat:
+    path: /rhosp_virt/configdrive-dci.iso
+  register: dcicdchk
+  tags:
+    - virt_dci
+
+- name: Remove the config drive entry if rebuilding and it exists
+  file:
+    name: /rhosp_virt/configdrive-dci.iso
+    state: absent
+  when: dcicdchk.stat.exists == True and dci_rebuild_configdrive
+  tags:
+    - virt_dci
+
+- name: Generate a user-data file for dci vm cloud-init
+  template:
+    src: dci-user-data.j2
+    dest: user-data
+  when: dcicdchk.stat.exists == False or dci_rebuild_configdrive
+  tags:
+    - virt_dci
+
+- name: Generate a meta-data file for dci vm cloud-init
+  template:
+    src: dci-meta-data.j2
+    dest: meta-data
+  when: dcicdchk.stat.exists == False or dci_rebuild_configdrive
+  tags:
+    - virt_dci
+
+- name: Generate the cloud-init configdrive image
+  shell: genisoimage -volid cidata -input-charset utf-8 -joliet -rock -output /rhosp_virt/configdrive-dci.iso  user-data meta-data
+  args:
+    creates: /rhosp_virt/configdrive-dci.iso
+  when: dcicdchk.stat.exists == False or dci_rebuild_configdrive
+  tags:
+    - virt_dci
+
+- name: Delete the user-data and meta-data files
+  file:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - "user-data"
+    - "meta-data"
+  when: dcicdchk.stat.exists == False or dci_rebuild_configdrive
+  tags:
+    - virt_dci
+
+- name: Refresh the virt pool
+  shell: virsh pool-refresh rhosp_virt 
+  tags:
+    - virt_dci
+
+######################
+# Start the new VM
+######################
+- name: Create the dci vm
+  shell: |
+    virt-install --name dci.{{ domain_name }} \
+             --vcpus {{ dci_vcpus }} \
+             --memory {{ dci_memory }} \
+             --network network=default \
+             --network bridge={{ dci_eth1_bridge }} \
+             --disk vol=rhosp_virt/dci.qcow2,format=qcow2 \
+             --import --disk vol=rhosp_virt/configdrive-dci.iso,device=cdrom \
+             --noautoconsole \
+             --cpu host-passthrough \
+             --hvm \
+             --os-variant={{ dci_os_variant }} \
+             --console pty,target_type=serial
+  args:
+    creates: /etc/libvirt/qemu/dci.{{ domain_name }}.xml
+
+
+###########################################
+# Pull the ip and add it to the /etc/hosts
+###########################################
+- name: Pull the ip address for the host
+  shell: virsh domifaddr dci.{{ domain_name }} | awk '/vnet/{print $4}' | awk -F '/' '{print $1}'
+  register: dcinewipchk
+  until: dcinewipchk.stdout != ""
+  retries: 10
+  delay: 10
+  ignore_errors: yes
+  tags:
+    - virt_dci
+
+- name: update the /etc/hosts with the ip, hostname and short hostname
+  lineinfile:
+    path: /etc/hosts
+    state: present
+    regexp: "dci.{{ domain_name }} dci"
+    line: "{{ dcinewipchk.stdout }} dci.{{ domain_name }} dci"
+  tags:
+    - virt_dci
+
+# Set up the dci ssh keys
+- name: Copy over the ssh keys if needed
+  shell: |
+    ssh -o StrictHostKeyChecking=no dci@dci ls /home/dci/.ssh/id_rsa
+    if [ $? != 0 ]; then
+      scp -o StrictHostKeyChecking=no /home/dci/.ssh/id_rsa* dci@dci:/home/dci/.ssh/
+    fi
+  tags:
+    - virt_dci

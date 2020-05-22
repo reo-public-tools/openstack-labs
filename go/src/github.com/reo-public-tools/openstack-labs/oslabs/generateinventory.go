@@ -41,7 +41,7 @@ func GenerateInventory(labName string) (error) {
     for _, param := range domainInfo.Parameters {
         fmt.Printf("      %s: %s\n", param.Name, param.Value)
         if param.Name == "type" {
-            curType = param.Value
+            curType = param.Value.(string)
         }
     }
 

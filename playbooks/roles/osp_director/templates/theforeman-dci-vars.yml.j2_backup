@@ -1,0 +1,61 @@
+---
+
+# theforman domain level info
+domain_name: "{{ domain_name }}"
+external_floating_ip: "{{ domain_parameters['external_floating_ip'] }}"
+external_vrid: "{{ domain_parameters['external_vrid'] }}"
+internal_floating_ip: "{{ domain_parameters['internal_floating_ip'] }}"
+internal_vrid: "{{ domain_parameters['internal_vrid'] }}"
+
+# theforeman subnet info tied to the domain
+{% for subnet in subnets %}
+{%- set netname = subnet | lower | regex_replace('^lab[0-9]*-','') | regex_replace('-','_') -%}
+{%- set netname = 'internal' if netname == 'mgmt' else netname -%}
+{{ netname }}_gateway: "{{ subnets[subnet]['gateway'] }}"
+{{ netname }}_network: "{{ subnets[subnet]['network'] }}"
+{{ netname }}_netmask: "{{ subnets[subnet]['netmask'] }}"
+{{ netname }}_network_cidr: "{{ subnets[subnet]['network_address'] }}"
+{{ netname }}_vlan: "{{ subnets[subnet]['vlan'] }}"
+{{ netname }}_dhcp_from: "{{ subnets[subnet]['dhcp_from'] }}"
+{{ netname }}_dhcp_to: "{{ subnets[subnet]['dhcp_to'] }}"
+
+{% endfor %}
+
+
+# ironic nodes that have been "checked out" for this environment
+# The 'name' can be mapped back to an ironic node id in the
+# ironic environment this was spun up on.
+{% set cur_controller_num = namespace(value=1) %}
+{% set cur_ceph_num = namespace(value=1) %}
+{% set cur_compute_num = namespace(value=1) %}
+ironic_nodes:
+{% for ironicnode in ironic_info['IronicNodeDetails'] %}
+  - pm_password: "{{ ironicnode['impi_password'] }}"
+  {% if ironicnode['system_type'] == "standard" %}
+    {% if cur_controller_num <= 3 %}
+    name: "controller0{{ cur_controller_num.value | string }}"
+    role: "controller"
+    {% set cur_controller_num.value = cur_controller_num.value + 1 %}
+    {% else %}
+    name: "compute0{{ cur_compute_num.value | string }}"
+    role: "compute"
+    {% set cur_compute_num.value = cur_compute_num.value + 1 %}
+    {% endif %}
+  {% endif %}
+  {% if ironicnode['system_type'] == "standard" %}
+    name: "ceph0{{ cur_compute_num.value | string }}"
+    role: "ceph"
+    {% set cur_ceph_num.value = cur_ceph_num.value + 1 %}
+  {% endif %}
+    phobos_ironic_node_id: "{{ ironicnode['id'] }}"
+    pm_type: "pxe_ipmitool"
+    pm_addr: "{{ ironicnode['impi_address'] }}"
+    mac: "{{ ironicnode['macs'] }}"
+    memory: "{{ ironicnode['memory_mb'] }}"
+    disk: "{{ ironicnode['size'] }}"
+    local_gb: "{{ ironicnode['local_gb'] }}"
+    arch: "{{ ironicnode['cpu_arch'] }}"
+    cpu: "{{ ironicnode['cpus'] }}"
+    pm_user: "{{ ironicnode['impi_username'] }}"
+{% endfor %}
+

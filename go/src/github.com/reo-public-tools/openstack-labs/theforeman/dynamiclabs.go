@@ -238,7 +238,7 @@ func FindAvailableMulticastGroup(url string, session string, multicastGroupBase 
 
             // Mark it as not free for use so a new number is generated
             if parameter.Name == "multicast_group" {
-                usedMulticastGroups = append(usedMulticastGroups, parameter.Value)
+                usedMulticastGroups = append(usedMulticastGroups, parameter.Value.(string))
             }
         }
 
@@ -296,7 +296,7 @@ func FindAvailableVRIDs(url string, session string) (int, int, error) {
 
             // Mark it as not free for use so a new number is generated
             if strings.Contains(parameter.Name, "ternal_vrid") {
-                intValue, err := strconv.Atoi(parameter.Value)
+                intValue, err := strconv.Atoi(parameter.Value.(string))
                 if err != nil {
                     _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
                     return 1, 1, err

@@ -59,13 +59,13 @@ type Subnets struct {
 	NetworkAddress string `json:"network_address"`
 }
 type Parameters struct {
-	Priority      int    `json:"priority"`
-	CreatedAt     string `json:"created_at"`
-	UpdatedAt     string `json:"updated_at"`
-	ID            int    `json:"id"`
-	Name          string `json:"name"`
-	ParameterType string `json:"parameter_type"`
-	Value         string `json:"value"`
+	Priority      int         `json:"priority"`
+	CreatedAt     string      `json:"created_at"`
+	UpdatedAt     string      `json:"updated_at"`
+	ID            int         `json:"id"`
+	Name          string      `json:"name"`
+	ParameterType string      `json:"parameter_type"`
+	Value         interface{} `json:"value"`
 }
 type Locations struct {
 	ID          int    `json:"id"`
@@ -396,7 +396,7 @@ func GetDomainParameter(url string, session string, domainid interface{}, paramk
     // See if the parameter exists
     for _, parameter := range curdomaininfo.Parameters {
         if parameter.Name == paramkey {
-            return parameter.Value, nil
+            return parameter.Value.(string), nil
         }
     }
 

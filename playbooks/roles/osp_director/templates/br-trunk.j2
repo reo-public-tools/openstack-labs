@@ -1,0 +1,9 @@
+DEVICE="br-trunk"
+BOOTPROTO="static"
+IPADDR="{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}" 
+NETMASK="{{ hostvars[inventory_hostname]['ansible_default_ipv4']['netmask'] }}" 
+TYPE="Bridge"
+NM_CONTROLLED="no"
+ONBOOT="yes"
+DELAY=0
+STP=off

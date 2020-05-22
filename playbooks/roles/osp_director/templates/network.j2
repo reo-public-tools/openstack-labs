@@ -1,0 +1,5 @@
+cat /etc/sysconfig/network
+NETWORKING=yes
+NOZEROCONF=yes
+GATEWAY="{{ hostvars[inventory_hostname]['ansible_default_ipv4']['gateway'] }}"
+GATEWAYDEV="br-trunk"

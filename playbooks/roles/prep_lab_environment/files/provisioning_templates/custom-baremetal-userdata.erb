@@ -20,6 +20,8 @@ This template accepts the following parameters:
   rhel_compatible = @host.operatingsystem.family == 'Redhat' && @host.operatingsystem.name != 'Fedora'
   # safemode renderer does not support unary negation
   pm_set = @host.puppetmaster.empty? ? false : true
+  enable-puppet6 = true
+  enable-puppetlabs-puppet6-repo = true
   puppet_enabled = pm_set || host_param_true?('force-puppet')
   salt_enabled = host_param('salt_master') ? true : false
   chef_enabled = @host.respond_to?(:chef_proxy) && @host.chef_proxy

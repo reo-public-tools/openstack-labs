@@ -1,0 +1,171 @@
+---
+#########################
+# Unsubscribe on recreate
+#########################
+- name: Pull the ip address for the host
+  shell: virsh domifaddr directorvm.{{ domain_name }} | awk '/vnet/{print $4}' | awk -F '/' '{print $1}'
+  register: directorvmipchk
+  when: directorvm_recreate_vm
+  tags:
+    - virt_directorvm
+
+- name: Unregister the node
+  shell: |
+    ssh -o StrictHostKeyChecking=no \
+     directorvm@"{{ directorvmipchk.stdout }}" \
+     "sudo subscription-manager remove --all; \
+      sudo subscription-manager unregister; \
+      sudo subscription-manager clean"
+  when: directorvm_recreate_vm
+  tags:
+    - virt_directorvm
+  
+
+####################
+# Prep the image
+####################
+- name: Download director vm image
+  get_url:
+    url: '{{ directorvm_image_url }}'
+    dest: "/rhosp_virt/{{ directorvm_image_url.split('/')[-1] }}"
+  tags:
+    - virt_director
+
+
+- name: Destroy vm if directorvm_recreate_vm is set
+  shell: |
+    virsh destroy directorvm.{{ domain_name }}
+    virsh undefine directorvm.{{ domain_name }}
+    rm -f /rhosp_virt/directorvm.qcow2
+  when: directorvm_recreate_vm
+
+- name: Make a copy of the base image for the directorvm vm
+  shell: cp -p /rhosp_virt/{{ directorvm_image_url.split('/')[-1] }} /rhosp_virt/directorvm.qcow2
+  args:
+    creates: /rhosp_virt/directorvm.qcow2
+  tags:
+    - virt_directorvm
+
+- name: Check if the vm is already running
+  shell: virsh dominfo directorvm.{{ domain_name }}
+  ignore_errors: yes
+  register: directorvmdomchk
+  tags:
+    - virt_directorvm
+
+- name: Check the directorvm image size
+  shell: qemu-img info /rhosp_virt/directorvm.qcow2 | awk '/^virtual size/{print $3}' | grep {{ directorvm_vm_size }}
+  ignore_errors: yes
+  register: directorvmimgchk
+  when: directorvmdomchk.rc != 0
+  tags:
+    - virt_directorvm
+
+- name: Resize the directorvm image
+  shell: qemu-img resize /rhosp_virt/directorvm.qcow2 "{{ directorvm_vm_size }}"
+  when: directorvmdomchk.rc != 0 and directorvmimgchk.rc != 0  
+  tags:
+    - virt_directorvm
+
+#####################################
+# Prep the configdrive for cloud-init
+#####################################
+
+- name: Check for existing directorvm config drive
+  stat:
+    path: /rhosp_virt/configdrive-directorvm.iso
+  register: directorvmcdchk
+  tags:
+    - virt_directorvm
+
+- name: Remove the config drive entry if rebuilding and it exists
+  file:
+    name: /rhosp_virt/configdrive-directorvm.iso
+    state: absent
+  when: directorvmcdchk.stat.exists == True and directorvm_rebuild_configdrive
+  tags:
+    - virt_directorvm
+
+- name: Generate a user-data file for directorvm vm cloud-init
+  template:
+    src: directorvm-user-data.j2
+    dest: user-data
+  when: directorvmcdchk.stat.exists == False or directorvm_rebuild_configdrive
+  tags:
+    - virt_directorvm
+
+- name: Generate a meta-data file for directorvm vm cloud-init
+  template:
+    src: directorvm-meta-data.j2
+    dest: meta-data
+  when: directorvmcdchk.stat.exists == False or directorvm_rebuild_configdrive
+  tags:
+    - virt_directorvm
+
+- name: Generate the cloud-init configdrive image
+  shell: genisoimage -volid cidata -input-charset utf-8 -joliet -rock -output /rhosp_virt/configdrive-directorvm.iso  user-data meta-data
+  args:
+    creates: /rhosp_virt/configdrive-directorvm.iso
+  when: directorvmcdchk.stat.exists == False or directorvm_rebuild_configdrive
+  tags:
+    - virt_directorvm
+
+- name: Delete the user-data and meta-data files
+  file:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - "user-data"
+    - "meta-data"
+  when: directorvmcdchk.stat.exists == False or directorvm_rebuild_configdrive
+  tags:
+    - virt_directorvm
+
+- name: Refresh the virt pool
+  shell: virsh pool-refresh rhosp_virt 
+  tags:
+    - virt_directorvm
+
+######################
+# Start the new VM
+######################
+- name: Create the directorvm vm
+  shell: |
+    virt-install --name directorvm.{{ domain_name }} \
+             --vcpus {{ directorvm_vcpus }} \
+             --memory {{ directorvm_memory }} \
+             --network network=default \
+             --network bridge={{ directorvm_eth1_bridge }} \
+             --disk vol=rhosp_virt/directorvm.qcow2,format=qcow2 \
+             --import --disk vol=rhosp_virt/configdrive-directorvm.iso,device=cdrom \
+             --noautoconsole \
+             --cpu host-passthrough \
+             --hvm \
+             --os-variant={{ directorvm_os_variant }} \
+             --console pty,target_type=serial
+  args:
+    creates: /etc/libvirt/qemu/directorvm.{{ domain_name }}.xml
+
+
+###########################################
+# Pull the ip and add it to the /etc/hosts
+###########################################
+- name: Pull the ip address for the host
+  shell: virsh domifaddr directorvm.{{ domain_name }} | awk '/vnet/{print $4}' | awk -F '/' '{print $1}'
+  register: directorvmnewipchk
+  until: directorvmnewipchk.stdout != ""
+  retries: 20
+  delay: 20
+  ignore_errors: yes
+  tags:
+    - virt_directorvm
+
+- name: update the /etc/hosts with the ip, hostname and short hostname
+  lineinfile:
+    path: /etc/hosts
+    state: present
+    regexp: "directorvm director undercloudvm undercloud"
+    line: "{{ directorvmnewipchk.stdout }} directorvm.{{ domain_name }} directorvm director undercloudvm undercloud"
+  tags:
+    - virt_directorvm
+

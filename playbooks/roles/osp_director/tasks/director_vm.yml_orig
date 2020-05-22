@@ -1,0 +1,9 @@
+---
+
+- name: Download director vm image
+  get_url:
+    url: '{{ director_image_url }}'
+    dest: "/rhosp_virt/{{ director_image_url.split('/')[-1] }}"
+  tags:
+    - virt_director
+

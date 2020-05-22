@@ -1,0 +1,46 @@
+---
+- name: Register the undercloud physical node
+  redhat_subscription:
+    state: present
+    username: '{{ rhn_user }}'
+    password: '{{ rhn_pass }}'
+    pool_ids: '{{ rhn_pool_id }}'
+  tags:
+    - rhn_register
+
+- name: Add fast-datapath repo for ovs network script usage
+  rhsm_repository:
+    name: 'fast-datapath-for-rhel-8-x86_64-rpms'
+    state: present
+  tags:
+    - rhn_register
+
+- name: Install some dependancies for networking
+  dnf:
+    name: '{{ item }}'
+    state: present
+  with_items: '{{ physical_director_packages }}'
+  tags:
+    - package_install
+
+- name: upgrade all packages
+  dnf:
+    name: "*"
+    state: latest
+  tags:
+    - package_install
+
+- name: install the virt host tooling seperatly and reboot if needed
+  dnf:
+    name: '@Virtualization Host'
+    state: present
+  register: vhostinstall
+  tags:
+    - package_install
+
+- name: Reboot on the virt host group install
+  reboot:
+    reboot_timeout: 3600 
+  when: vhostinstall.changed
+  tags:
+    - package_install

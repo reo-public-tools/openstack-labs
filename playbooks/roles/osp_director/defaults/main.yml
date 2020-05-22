@@ -1,0 +1,39 @@
+---
+bond_interfaces:
+  - "eth0"
+  - "eth1"
+
+physical_director_packages:
+  - 'openvswitch2.12'
+  - 'network-scripts-openvswitch2.12'
+  - 'python3-openvswitch2.12'
+  - 'network-scripts'
+  - 'libibverbs'
+  - 'lvm2'
+  - '@Virtualization Client'
+
+# A second raid10 is available in the lab under /dev/sdb
+data_disk: sdb
+
+# Info on the dci vm
+dci_image_url: "http://172.20.41.28/pulp/isos/Default_Organization/Library/custom/largefiles/largefiles/rhel-server-7.7-update-1-x86_64-kvm.qcow2"
+dci_vm_size: 180G
+dci_vcpus: 12
+dci_memory: 10240
+dci_os_variant: "rhel7.7"
+dci_eth1_bridge: "br-trunk"
+dci_rebuild_configdrive: false
+dci_recreate_vm: false
+
+# Info on the director vm
+directorvm_image_url: "http://172.20.41.28/pulp/isos/Default_Organization/Library/custom/largefiles/largefiles/rhel-8.1-x86_64-kvm.qcow2"
+directorvm_vm_size: 500G
+directorvm_vcpus: 16
+directorvm_memory: 128784
+directorvm_os_variant: "rhel8.1"
+directorvm_eth1_bridge: "br-trunk"
+directorvm_rebuild_configdrive: false
+directorvm_recreate_vm: false
+
+
+

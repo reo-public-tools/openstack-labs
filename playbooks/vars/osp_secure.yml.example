@@ -1,0 +1,4 @@
+---
+rhn_user: 'rshuser'
+rhn_pass: 'rshpass'
+rhn_pool_id: 'rhnpoolid'

@@ -1,0 +1,6 @@
+---
+
+- name: Prepare a lab environment's networking config
+  hosts: 'all'
+  roles:
+    - osp_director

@@ -42,7 +42,7 @@ func Show(labName string) (error) {
         switch pname := param.Name; pname {
         case "type":
             fmt.Printf("    %-35s %s\n", "Type", param.Value)
-            curType = param.Value
+            curType = param.Value.(string)
         case "in-use":
             fmt.Printf("    %-35s %s\n", "In Use:", param.Value)
         case "ioi_data":
@@ -59,7 +59,7 @@ func Show(labName string) (error) {
         case "external_floating_ip":
             fmt.Printf("    %-35s %s\n", "Haproxy/Keepalived External IP:", param.Value)
         default:
-            fmt.Printf("    %-35s %s\n", pname + ":", param.Value)
+            fmt.Printf("    %-35s %v\n", pname + ":", param.Value.(string))
         }
     }
 

@@ -1,0 +1,27 @@
+---
+- name: Convert the ironic json data into a parsable fact
+  set_fact:
+    ironic_info: "{{ domain_parameters['ioi_data'] | b64decode | from_json }}"
+  tags:
+    - theforeman_dci_vars
+
+- name: Create the variable file under /root/ on the kvm box
+  template:
+    src: "theforeman-dci-vars.yml.j2"
+    dest: "/root/theforeman-dci-vars.yml"
+    owner: "root"
+    group: "root"
+    mode: '0644'
+  register: varfilecopy
+  tags:
+    - theforeman_dci_vars
+
+- name: Copy it over to the dci vm
+  shell: |
+    scp -o StrictHostKeyChecking=no /root/theforeman-dci-vars.yml dci@dci:~/
+    ssh -o StrictHostKeyChecking=no dci@dci sudo mv /home/dci/theforeman-dci-vars.yml /etc/dci-openstack-agent/
+  when: varfilecopy.changed
+  tags:
+    - theforeman_dci_vars
+
+

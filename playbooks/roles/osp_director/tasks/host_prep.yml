@@ -1,0 +1,4 @@
+---
+- name: Create a dci user on the kvm host
+  user:
+    
