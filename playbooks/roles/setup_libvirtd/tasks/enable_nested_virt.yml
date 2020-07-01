@@ -1,0 +1,26 @@
+---
+
+- name: Enable nested virt for intel or amd
+  shell: |
+    modinfo kvm_intel > /dev/null 2>&1
+    if [ $? == 0 ]; then
+      egrep '0|N' /sys/module/kvm_intel/parameters/nested > /dev/null 2>&1
+      if [ $? == 0 ]; then
+        echo "Enabling nested virt for intel"
+        echo 'options kvm_intel nested=1' > /etc/modprobe.d/kvm.conf
+        modprobe -r kvm_intel
+        modprobe kvm_intel
+      fi
+    fi  
+
+    modinfo kvm_amd > /dev/null 2>&1
+    if [ $? == 0 ]; then
+      egrep '0|N' /sys/module/kvm_amd/parameters/nested > /dev/null 2>&1
+      if [ $? == 0 ]; then
+        echo "Enabling nested virt for amd"
+        echo 'options kvm_amd nested=1' > /etc/modprobe.d/kvm.conf
+        modprobe -r kvm_amd
+        modprobe kvm_amd
+      fi
+    fi  
+

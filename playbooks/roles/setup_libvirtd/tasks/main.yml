@@ -1,0 +1,21 @@
+---
+- name: Install required package groups
+  yum:
+    name: '{{ libvirtd_packages }}'
+    state: present
+
+- name: Make sure the services is enabled and started
+  service:
+    name: libvirtd
+    enabled: yes
+    state: started  
+
+- include: pool_setup.yml
+
+- include: base_images.yml
+
+- include: network_setup.yml
+
+- include: update_katello_ip.yml
+
+- include: enable_nested_virt.yml

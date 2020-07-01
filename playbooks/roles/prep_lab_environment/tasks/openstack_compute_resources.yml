@@ -37,7 +37,7 @@
 
 - name: Create openstack compute resources
   shell: |
-    hammer compute-resource info --name phobos-int.rpc.rackspace.com > /dev/null
+    hammer compute-resource info --name '{{ item.name }}' > /dev/null
     if [ $? !=  0 ]; then
       /bin/hammer compute-resource create \
         --description '{{ item.description }}' \
@@ -114,7 +114,7 @@
     - external_networks_sql_patch
 
 - name: Add compute profiles
-  theforeman.foreman.foreman_compute_profile:
+  theforeman.foreman.compute_profile:
     validate_certs: no
     username: '{{ foreman_username }}'
     password: '{{ foreman_password }}'

@@ -1,0 +1,74 @@
+---
+- name: Get current data_devices value
+  set_fact:
+    locked_data_devices: "{{ data_devices }}"
+
+- name: Check for nvme devices first
+  set_fact:
+   data_devices: "{{ data_devices + [ '/dev/' + item ] }}"
+  when: 'item | regex_search("^nvme") and disk_type in ["auto", "nvme"] and locked_data_devices == []' 
+  with_items: '{{ ansible_devices.keys() | list }}'
+
+- name: Get current data_devices value
+  set_fact:
+    locked_data_devices: "{{ data_devices }}"
+
+- name: Use scsi devices only if nvme devices were not found
+  set_fact:
+   data_devices: "{{ data_devices + [ '/dev/' + item ] }}"
+  when: 'item | regex_search("^sd") and item != "sda" and disk_type in ["auto", "scsi"] and locked_data_devices == []'
+  with_items: '{{ ansible_devices.keys() | list }}'
+
+- name: Using these data devices for /var/lib/libvirt/images
+  debug:
+    msg: "{{ data_devices }}"
+
+- name: Creating a volume group from the list of device
+  lvg:
+    pvs: "{{ data_devices }}"
+    vg: "{{ volume_group_name }}"
+    state: present
+    pesize: 1M
+  when: 'data_devices != []'
+  
+
+- name: Creating a striped logical volume
+  lvol:
+    vg: "{{ volume_group_name }}"
+    lv: "{{ volume_name }}"
+    size: "{{ volume_size }}"
+    state: present
+    opts: "-i {{ data_devices | count }}"
+  when: 'data_devices != []'
+    
+
+- name: Format the volume
+  filesystem:
+    fstype: "{{ pool_filesystem }}"
+    dev: "/dev/{{ volume_group_name }}/{{ volume_name }}"
+    opts: "{{ pool_mkfs_opts }}"
+  when: 'data_devices != []'
+    
+
+- name: Mount the volume
+  mount:
+    path: "{{ pool_mount }}"
+    src: "/dev/{{ volume_group_name }}/{{ volume_name }}"
+    fstype: "{{ pool_filesystem }}"
+    state: mounted
+
+- name: Restore the context on the new volume
+  shell:  restorecon -R {{ pool_mount }}
+
+
+# Had some issues with virt_pool and the python3 venv with centos 7. 
+- name: Create the pool 
+  shell: |
+    virsh pool-info "{{ pool_name }}" > /dev/null 2>&1
+    if [ $? != 0 ]; then
+      virsh pool-define-as --name "{{ pool_name }}" --type dir --target "{{ pool_mount }}"
+      virsh pool-start "{{ pool_name }}"
+      virsh pool-autostart "{{ pool_name }}"
+    fi
+
+

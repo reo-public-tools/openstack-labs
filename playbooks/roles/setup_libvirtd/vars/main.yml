@@ -1,0 +1,4 @@
+---
+
+libvirtd_packages:
+  - "@^virtualization-host-environment"

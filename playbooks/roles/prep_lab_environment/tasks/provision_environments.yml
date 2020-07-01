@@ -1,5 +1,5 @@
 - name: Create new puppet environments for labs
-  theforeman.foreman.foreman_environment:
+  theforeman.foreman.puppet_environment:
     validate_certs: no
     username: '{{ foreman_username }}'
     password: '{{ foreman_password }}'

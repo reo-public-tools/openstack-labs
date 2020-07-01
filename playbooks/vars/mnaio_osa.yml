@@ -1,0 +1,21 @@
+---
+
+# mnaio variables for OSA only
+base_images:
+  - image_name: "Ubuntu18.04.qcow2"
+    mnaio_version: "stable/train"
+    url: https://cloud-images.ubuntu.com/releases/bionic/release/ubuntu-18.04-server-cloudimg-amd64.img
+    checksum: sha256:4c62247baa2e8c480a924ff9dfa6f56f86f848f2477d3f7d36c532af6bdf0907
+    user_data: true
+    username: "ubuntu"
+    operatingsystem: "Ubuntu Bionic"
+    architecture: "x86_64"
+    
+  - image_name: "Ubuntu16.04.qcow2"
+    mnaio_version: "stable/queens"
+    url: https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-disk1.img
+    checksum: sha256:d04e0bc7b051ac05a0fec5931906109782462f2c415e1d306ff28f2ec9c9bbcd
+    user_data: true
+    username: "ubuntu"
+    operatingsystem: "Ubuntu Xenial"
+    architecture: "x86_64"

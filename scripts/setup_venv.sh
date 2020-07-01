@@ -1,5 +1,8 @@
 #!/bin/bash
 
+yum -y groupinstall "Development Tools"
+yum -y install libvirt-devel python3-devel
+
 VENV_LOC="./katello_venv"
 
 # Create the venv

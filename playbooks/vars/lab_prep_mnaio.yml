@@ -1,0 +1,538 @@
+#####################################
+# libvirt configs
+# depending on the lab environment. 
+#####################################
+external_controller_ips:
+  - 172.0.60.20
+  - 172.0.60.21
+  - 172.0.60.22
+external_network_cidr: 172.0.60.0/22
+external_network_gateway: 172.0.60.1
+external_floating_ip: 172.0.60.100
+
+
+# Each environment's network is different. (used to decide which custom-nic templates to use for rpcr)
+lab_network_environment: "mnaio"
+
+# Each environment may have a different disk layout and config. 
+# We are using this to decide which template to render.
+lab_ceph_config: "mnaio_storage_layout"
+
+
+##########################################
+# Org and Location that holds the labs
+# The labs are defined with domains
+##########################################
+lab_org_name: "Lab Organization"
+lab_location_name: "Lab Location"
+
+
+#######################
+# Base domain name
+#######################
+lab_base_domain_name: "mnaio.rpc.rackspace.com"
+
+##################
+# Base image path
+##################
+base_image_path: "/var/lib/libvirt/images"
+
+
+###############################################################
+# Set up some global parameters to be used for domain creation
+###############################################################
+
+additional_foreman_global_parameters:
+  - key: "lab_org_name"
+    value: '{{ lab_org_name }}'
+  - key: "lab_location_name"
+    value: '{{ lab_location_name }}'
+  - key: "lab_base_domain_name"
+    value: '{{ lab_base_domain_name }}'
+  - key: "multicast_group_base"
+    value: "239.1.33"
+  - key: "vxlan_network_prefix"
+    value: "172.22"
+  - key: "vxlan_netmask"
+    value: "255.255.252.0"
+  - key: "vxlan_third_octet_step"
+    value: 4
+  - key: "vxlan_networks"
+    value: "mgmt,stor-mgmt,storage,tenant,lbaas,inside-net,gw-net"
+
+################
+# List of users
+################
+foreman_users:
+  - username: labadmin
+    password: change4me
+    mail: shannon.mitchell@rackspace.com
+    admin: yes
+    default_organization: '{{ lab_org_name }}'
+    default_location: '{{ lab_location_name }}'
+    description: "Lab Admin"
+    firstname: Lab
+    lastname: Admin
+
+
+#######################################
+# Openstack project used for instances
+#######################################
+
+openstack_domain_name: "default"
+openstack_domain_desc: "Shared LAB Project"
+openstack_project_name: "labs-project"
+openstack_project_desc: "Shared Lab Project"
+openstack_project_admin_user: "labs-admin"
+openstack_project_admin_pass: "change4me"
+openstack_project_admin_desc: "LABS Domain Admin User"
+openstack_project_admin_email: "shannon.mitchell@rackspace.com"
+
+    
+########################################################
+# For vlans on ironic nodes, we will have to have a way
+# to pre-define and check-in/check-out the static labs.
+# The static labs, are just a collection of VLANS and 
+# networks set up by netsec that is shared across all 
+# ironic nodes in the phobos cluster.
+########################################################
+static_labs:
+  - domain_name: "lab1.{{ lab_base_domain_name }}"
+    domain_organizations: 
+      - '{{ lab_org_name }}'
+    domain_locations:
+      - '{{ lab_location_name }}'
+    domain_description: "LAB1 Static Domain"
+    domain_parameters:
+      - name: "type"
+        value: "vlan"
+        parameter_type: "string"
+      - name: "in-use"
+        value: "no"
+        parameter_type: "string"
+      - name: "internal_floating_ip"
+        value: "172.0.64.10"
+        parameter_type: "string"
+      - name: "internal_vrid"
+        value: "12"
+        parameter_type: "string"
+      - name: "external_vrid"
+        value: "13"
+        parameter_type: "string"
+      # external_floating_ip will need pulled from ironic after/during checkout
+    domain_subnets:
+      - subnet_name: "LAB1-HOST"
+        subnet_description: "LAB1 Host/external network with static VLANs"
+        subnet_vlan: 200
+        subnet_type: "IPv4"
+        subnet_network: "172.0.60.0"
+        subnet_mask: "255.255.252.0"
+        subnet_ipam: "Random DB"
+        subnet_dhcp_from: "172.0.60.50"
+        subnet_dhcp_to: "172.0.60.255"
+        subnet_gateway: "172.0.60.1"
+        subnet_bootmode: "Static"
+      - subnet_name: "LAB1-MGMT"
+        subnet_description: "LAB1 management network with static VLANs"
+        subnet_vlan: 201
+        subnet_type: "IPv4"
+        subnet_network: "172.0.64.0"
+        subnet_mask: "255.255.252.0"
+        subnet_ipam: "Random DB"
+        subnet_dhcp_from: "172.0.64.50"
+        subnet_dhcp_to: "172.0.64.255"
+        subnet_gateway: "172.0.64.1"
+        subnet_bootmode: "Static"
+      - subnet_name: "LAB1-STOR-MGMT"
+        subnet_description: "LAB1 storage management network with static VLANs"
+        subnet_vlan: 202
+        subnet_type: "IPv4"
+        subnet_network: "172.0.68.0"
+        subnet_mask: "255.255.252.0"
+        subnet_ipam: "Random DB"
+        subnet_dhcp_from: "172.0.68.50"
+        subnet_dhcp_to: "172.0.68.255"
+        subnet_gateway: "172.0.68.1"
+        subnet_bootmode: "Static"
+      - subnet_name: "LAB1-STORAGE"
+        subnet_description: "LAB1 storage network with static VLANs"
+        subnet_vlan: 203
+        subnet_type: "IPv4"
+        subnet_network: "172.0.72.0"
+        subnet_mask: "255.255.252.0"
+        subnet_ipam: "Random DB"
+        subnet_dhcp_from: "172.0.72.50"
+        subnet_dhcp_to: "172.0.72.255"
+        subnet_gateway: "172.0.72.1"
+        subnet_bootmode: "Static"
+      - subnet_name: "LAB1-TENANT"
+        subnet_description: "LAB1 tenant network with static VLANs"
+        subnet_vlan: 204
+        subnet_type: "IPv4"
+        subnet_network: "172.0.76.0"
+        subnet_mask: "255.255.252.0"
+        subnet_ipam: "Random DB"
+        subnet_dhcp_from: "172.0.76.50"
+        subnet_dhcp_to: "172.0.76.255"
+        subnet_gateway: "172.0.76.1"
+        subnet_bootmode: "Static"
+      - subnet_name: "LAB1-LBAAS"
+        subnet_description: "LAB1 lbaas network with static VLANs"
+        subnet_vlan: 205
+        subnet_type: "IPv4"
+        subnet_network: "172.0.80.0"
+        subnet_mask: "255.255.252.0"
+        subnet_ipam: "Random DB"
+        subnet_dhcp_from: "172.0.80.50"
+        subnet_dhcp_to: "172.0.80.255"
+        subnet_gateway: "172.0.80.1"
+        subnet_bootmode: "Static"
+      - subnet_name: "LAB1-INSIDE-NET"
+        subnet_description: "LAB1 inside net network with static VLANs"
+        subnet_vlan: 206
+        subnet_type: "IPv4"
+        subnet_network: "172.0.84.0"
+        subnet_mask: "255.255.252.0"
+        subnet_ipam: "Random DB"
+        subnet_dhcp_from: "172.0.84.50"
+        subnet_dhcp_to: "172.0.84.255"
+        subnet_gateway: "172.0.84.1"
+        subnet_bootmode: "Static"
+      - subnet_name: "LAB1-GW-NET"
+        subnet_description: "LAB1 gateway net network with static VLANs"
+        subnet_vlan: 207
+        subnet_type: "IPv4"
+        subnet_network: "172.0.88.0"
+        subnet_mask: "255.255.252.0"
+        subnet_ipam: "Random DB"
+        subnet_dhcp_from: "172.0.88.50"
+        subnet_dhcp_to: "172.0.88.255"
+        subnet_gateway: "172.0.88.1"
+        subnet_bootmode: "Static"
+      - subnet_name: "LAB1-MANILLA"
+        subnet_description: "LAB1 Manilla network with static VLANs"
+        subnet_vlan: 208
+        subnet_type: "IPv4"
+        subnet_network: "172.0.92.0"
+        subnet_mask: "255.255.252.0"
+        subnet_ipam: "Random DB"
+        subnet_dhcp_from: "172.0.92.50"
+        subnet_dhcp_to: "172.0.92.255"
+        subnet_gateway: "172.0.92.1"
+        subnet_bootmode: "Static"
+
+
+#############################################################
+# Variables to set up the compute profile to allow the
+# foreman to spin up instances in the libvirt environment
+#############################################################
+
+foreman_compute_resources_libvirt:
+  - name: "libvirt-mnaio"
+    provider: "libvirt"
+    url: "qemu+ssh://root@{{ katello_host_ip }}/system"
+    organizations: 
+      - '{{ lab_org_name }}'
+    locations: 
+      - '{{ lab_location_name }}'
+    description: "Local Libvirt Instance"
+
+# List used to associate custom provisioning templates to
+foreman_provisioning_template_operating_systems:
+  - "Ubuntu Xenial"
+  - "Ubuntu Bionic"
+  - "CentOS 8"
+  - "RHEL 8"
+
+##################################################################
+# Info for compute profiles
+# These map out flavors to images along with some other settings
+# to make provisioning easier. These values were pulled from
+# the db after utilizing the GUI to set them.
+##################################################################
+foreman_compute_profiles:
+  - name: "ironic-standard_baremetal-ubuntu-bionic"
+    compute_attributes: 
+      - compute_resource: "phobos-int.rpc.rackspace.com"
+        vm_attrs:
+          flavor_ref: '9'
+          availability_zone: "nova"
+          image_ref: "127e41bd-eb08-4214-bd58-d6b2d3a63ec1"
+          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
+          security_groups:
+          - ''
+          - default
+          nics:
+          - ''
+          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
+          network: ''
+          boot_from_volume: 'false'
+          size_gb: ''
+          scheduler_hint_filter: ''
+  - name: "ironic-standard_baremetal-ubuntu-xenial"
+    compute_attributes: 
+      - compute_resource: "phobos-int.rpc.rackspace.com"
+        vm_attrs:
+          flavor_ref: '9'
+          availability_zone: "nova"
+          image_ref: "4ee7e5a8-05b2-473a-bc6a-44139ad9548a"
+          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
+          security_groups:
+          - ''
+          - default
+          nics:
+          - ''
+          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
+          network: ''
+          boot_from_volume: 'false'
+          size_gb: ''
+          scheduler_hint_filter: ''
+  - name: "ironic-storage-perf_baremetal-ubuntu-bionic"
+    compute_attributes: 
+      - compute_resource: "phobos-int.rpc.rackspace.com"
+        vm_attrs:
+          flavor_ref: '14'
+          availability_zone: "nova"
+          image_ref: "127e41bd-eb08-4214-bd58-d6b2d3a63ec1"
+          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
+          security_groups:
+          - ''
+          - default
+          nics:
+          - ''
+          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
+          network: ''
+          boot_from_volume: 'false'
+          size_gb: ''
+          scheduler_hint_filter: ''
+  - name: "ironic-storage-perf_baremetal-ubuntu-xenial"
+    compute_attributes: 
+      - compute_resource: "phobos-int.rpc.rackspace.com"
+        vm_attrs:
+          flavor_ref: '14'
+          availability_zone: "nova"
+          image_ref: "4ee7e5a8-05b2-473a-bc6a-44139ad9548a"
+          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
+          security_groups:
+          - ''
+          - default
+          nics:
+          - ''
+          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
+          network: ''
+          boot_from_volume: 'false'
+          size_gb: ''
+          scheduler_hint_filter: ''
+  - name: "ironic-standard_baremetal-centos-8"
+    compute_attributes: 
+      - compute_resource: "phobos-int.rpc.rackspace.com"
+        vm_attrs:
+          flavor_ref: '9'
+          availability_zone: "nova"
+          image_ref: "adb16d8f-d31f-4053-b7d5-3e38c0e9b010"
+          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
+          security_groups:
+          - ''
+          - default
+          nics:
+          - ''
+          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
+          network: ''
+          boot_from_volume: 'false'
+          size_gb: ''
+          scheduler_hint_filter: ''
+  - name: "ironic-storage-perf_baremetal-centos-8"
+    compute_attributes: 
+      - compute_resource: "phobos-int.rpc.rackspace.com"
+        vm_attrs:
+          flavor_ref: '14'
+          availability_zone: "nova"
+          image_ref: "adb16d8f-d31f-4053-b7d5-3e38c0e9b010"
+          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
+          security_groups:
+          - ''
+          - default
+          nics:
+          - ''
+          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
+          network: ''
+          boot_from_volume: 'false'
+          size_gb: ''
+          scheduler_hint_filter: ''
+  - name: "ironic-standard_baremetal-rhel-8"
+    compute_attributes: 
+      - compute_resource: "phobos-int.rpc.rackspace.com"
+        vm_attrs:
+          flavor_ref: '9'
+          availability_zone: "nova"
+          image_ref: "1c6263a9-148a-4cec-bc97-83c96ce04bda"
+          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
+          security_groups:
+          - ''
+          - default
+          nics:
+          - ''
+          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
+          network: ''
+          boot_from_volume: 'false'
+          size_gb: ''
+          scheduler_hint_filter: ''
+  - name: "ironic-storage-perf_baremetal-rhel-8"
+    compute_attributes: 
+      - compute_resource: "phobos-int.rpc.rackspace.com"
+        vm_attrs:
+          flavor_ref: '14'
+          availability_zone: "nova"
+          image_ref: "1c6263a9-148a-4cec-bc97-83c96ce04bda"
+          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
+          security_groups:
+          - ''
+          - default
+          nics:
+          - ''
+          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
+          network: ''
+          boot_from_volume: 'false'
+          size_gb: ''
+          scheduler_hint_filter: ''
+        
+      
+           
+#foreman=> select * from compute_attributes;
+# id | compute_profile_id | compute_resource_id |      name       |                        vm_attrs                         |         created_at         |         updated_at         
+#----+--------------------+---------------------+-----------------+---------------------------------------------------------+----------------------------+----------------------------
+#  1 |                  4 |                   9 | ironic-standard | --- !ruby/hash:ActiveSupport::HashWithIndifferentAccess+| 2019-11-20 17:52:20.085768 | 2019-11-20 17:52:20.085768
+#    |                    |                     |                 | flavor_ref: '9'                                        +|                            | 
+#    |                    |                     |                 | availability_zone: nova                                +|                            | 
+#    |                    |                     |                 | image_ref: 127e41bd-eb08-4214-bd58-d6b2d3a63ec1        +|                            | 
+#    |                    |                     |                 | tenant_id: 6725de754e5e4f0e914aed7ec1247da0            +|                            | 
+#    |                    |                     |                 | security_groups:                                       +|                            | 
+#    |                    |                     |                 | - ''                                                   +|                            | 
+#    |                    |                     |                 | - default                                              +|                            | 
+#    |                    |                     |                 | nics:                                                  +|                            | 
+#    |                    |                     |                 | - ''                                                   +|                            | 
+#    |                    |                     |                 | - 8dd6207d-a1f5-4dfe-b97d-a8c967eb8548                 +|                            | 
+#    |                    |                     |                 | network: ''                                            +|                            | 
+#    |                    |                     |                 | boot_from_volume: 'false'                              +|                            | 
+#    |                    |                     |                 | size_gb: ''                                            +|                            | 
+#    |                    |                     |                 | scheduler_hint_filter: ''                              +|                            | 
+#    |                    |                     |                 |                                                         |                            | 
+#
+    
+
+
+#############################################################
+# List of puppet environment names to use for provisioning.
+# These will be tied to the default and lab org & loc.
+#############################################################
+puppet_environment_names:
+  - "labdev"
+  - "labtest"
+  - "labprod"
+
+
+##########################################################
+# We will create some host groups to map to various roles
+# being tested in the labs here.
+##########################################################
+
+host_groups:
+  - name: "kube-ironic-ubuntu-bionic"
+    architecture: "x86_64"
+    operatingsystem: "Ubuntu Bionic"
+    description: "Generic kubernetes test box running ubuntu bionic on ironic"
+    compute_profile: "ironic-standard_baremetal-ubuntu-bionic"
+    compute_resource: "phobos-int.rpc.rackspace.com"
+    environment: "labprod"
+    puppet_proxy: "{{ instance_name }}.localdomain"
+    puppet_ca_proxy: "{{ instance_name }}.localdomain"
+    organizations:
+      - '{{ lab_org_name }}'
+    locations:
+      - '{{ lab_location_name }}'
+    root_pass: "change4me"
+  - name: "osa-ironic-standard-xenial"
+    architecture: "x86_64"
+    operatingsystem: "Ubuntu Xenial"
+    description: "Ironic infra,compute & logging nodes running xenial"
+    compute_profile: "ironic-standard_baremetal-ubuntu-xenial"
+    compute_resource: "phobos-int.rpc.rackspace.com"
+    environment: "labprod"
+    puppet_proxy: "{{ instance_name }}.localdomain"
+    puppet_ca_proxy: "{{ instance_name }}.localdomain"
+    organizations:
+      - '{{ lab_org_name }}'
+    locations:
+      - '{{ lab_location_name }}'
+    root_pass: "change4me"
+  - name: "osa-ironic-storage-xenial"
+    architecture: "x86_64"
+    operatingsystem: "Ubuntu Xenial"
+    description: "Ironic ceph nodes running xenial"
+    compute_profile: "ironic-storage-perf_baremetal-ubuntu-xenial"
+    compute_resource: "phobos-int.rpc.rackspace.com"
+    environment: "labprod"
+    puppet_proxy: "{{ instance_name }}.localdomain"
+    puppet_ca_proxy: "{{ instance_name }}.localdomain"
+    organizations:
+      - '{{ lab_org_name }}'
+    locations:
+      - '{{ lab_location_name }}'
+    root_pass: "change4me"
+  - name: "osa-ironic-standard-bionic"
+    architecture: "x86_64"
+    operatingsystem: "Ubuntu Bionic"
+    description: "Ironic infra,compute & logging nodes running bionic"
+    compute_profile: "ironic-standard_baremetal-ubuntu-bionic"
+    compute_resource: "phobos-int.rpc.rackspace.com"
+    environment: "labprod"
+    puppet_proxy: "{{ instance_name }}.localdomain"
+    puppet_ca_proxy: "{{ instance_name }}.localdomain"
+    organizations:
+      - '{{ lab_org_name }}'
+    locations:
+      - '{{ lab_location_name }}'
+    root_pass: "change4me"
+  - name: "osa-ironic-storage-bionic"
+    architecture: "x86_64"
+    operatingsystem: "Ubuntu Bionic"
+    description: "Ironic ceph nodes running bionic"
+    compute_profile: "ironic-storage-perf_baremetal-ubuntu-bionic"
+    compute_resource: "phobos-int.rpc.rackspace.com"
+    environment: "labprod"
+    puppet_proxy: "{{ instance_name }}.localdomain"
+    puppet_ca_proxy: "{{ instance_name }}.localdomain"
+    organizations:
+      - '{{ lab_org_name }}'
+    locations:
+      - '{{ lab_location_name }}'
+    root_pass: "change4me"
+  - name: "osp-ironic-standard-centos-8"
+    architecture: "x86_64"
+    operatingsystem: "CentOS 8"
+    description: "Undercloud running centos 8"
+    compute_profile: "ironic-standard_baremetal-centos-8"
+    compute_resource: "phobos-int.rpc.rackspace.com"
+    environment: "labprod"
+    puppet_proxy: "{{ instance_name }}.localdomain"
+    puppet_ca_proxy: "{{ instance_name }}.localdomain"
+    organizations:
+      - '{{ lab_org_name }}'
+    locations:
+      - '{{ lab_location_name }}'
+    root_pass: "change4me"
+  - name: "osp-ironic-standard-rhel-8"
+    architecture: "x86_64"
+    operatingsystem: "RHEL 8"
+    description: "Undercloud running rhel 8"
+    compute_profile: "ironic-standard_baremetal-rhel-8"
+    compute_resource: "phobos-int.rpc.rackspace.com"
+    environment: "labprod"
+    puppet_proxy: "{{ instance_name }}.localdomain"
+    puppet_ca_proxy: "{{ instance_name }}.localdomain"
+    organizations:
+      - '{{ lab_org_name }}'
+    locations:
+      - '{{ lab_location_name }}'
+    root_pass: "change4me"
+

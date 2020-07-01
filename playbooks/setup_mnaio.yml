@@ -1,0 +1,29 @@
+---
+- name: Set up mnaio
+  hosts: localhost
+  become: true
+  connection: local
+  roles:
+    - role: setup_libvirtd
+      tags:
+        - setup_libvirtd
+
+
+- name: Prep the katello labs
+  hosts: 'localhost'
+  connection: local
+  vars_files:
+    - vars/katello-generated.yml
+    - vars/forklift.yml
+    - vars/lab_prep_mnaio.yml
+  pre_tasks:
+    - name: Gather some facts to use for the forman modules
+      set_fact:
+        foreman_username: 'admin'
+        foreman_password: '{{ foreman_installer_admin_password }}'
+        foreman_url: 'https://{{ katello_host_ip }}'
+      tags:
+        - always
+      delegate_to: localhost
+  roles:
+    - prep_lab_environment

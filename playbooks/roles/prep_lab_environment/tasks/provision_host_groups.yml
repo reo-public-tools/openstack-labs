@@ -1,5 +1,5 @@
 - name: Create foreman host groups
-  theforeman.foreman.foreman_hostgroup:
+  theforeman.foreman.hostgroup:
     validate_certs: no
     username: '{{ foreman_username }}'
     password: '{{ foreman_password }}'

@@ -1,0 +1,51 @@
+---
+- name: Create external/host provisioing network xml file
+  template:
+    src: provisioning.xml.j2
+    dest: /root/provisioning.xml
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Create the provisioning network
+  shell: |
+    virsh net-info {{ provisioning_name }} > /dev/null 2>&1
+    if [ $? != 0 ]; then
+      virsh net-define /root/provisioning.xml
+      virsh net-start {{ provisioning_name }}
+      virsh net-autostart {{ provisioning_name }}
+    fi
+
+- name: Create trunk network xml file
+  template:
+    src: trunk.xml.j2
+    dest: /root/trunk.xml
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Create the trunk network
+  shell: |
+    virsh net-info {{ trunk_name }} > /dev/null 2>&1
+    if [ $? != 0 ]; then
+      virsh net-define /root/trunk.xml
+      virsh net-start {{ trunk_name }}
+      virsh net-autostart {{ trunk_name }}
+    fi
+
+- name: Create storagerepl network xml file
+  template:
+    src: storagerepl.xml.j2
+    dest: /root/storagerepl.xml
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Create the storagerepl network
+  shell: |
+    virsh net-info {{ storagerepl_name }} > /dev/null 2>&1
+    if [ $? != 0 ]; then
+      virsh net-define /root/storagerepl.xml
+      virsh net-start {{ storagerepl_name }}
+      virsh net-autostart {{ storagerepl_name }}
+    fi

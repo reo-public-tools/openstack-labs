@@ -1,0 +1,7 @@
+<network>
+  <name>{{ provisioning_name }}</name>
+  <forward mode='nat'/>
+  <bridge name='{{ provisioning_name }}' stp='on' delay='0'/>
+  <ip address='{{ provisioning_gateway_ip }}' netmask='{{ provisioning_netmask }}' />
+</network>
+

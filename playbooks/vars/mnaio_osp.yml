@@ -1,0 +1,8 @@
+---
+
+# mnaio variables for OSP only
+base_images:
+  - image_name: "RHEL8.qcow2"
+    mnaio_version: "OSP16"
+  - image_name: "RHEL7.qcow2"
+    mnaio_version: "OSP13"

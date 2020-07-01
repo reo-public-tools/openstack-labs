@@ -2,3 +2,4 @@ apypie
 ansible
 openstacksdk
 python-openstackclient
+libvirt-python

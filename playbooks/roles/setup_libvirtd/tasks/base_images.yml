@@ -1,0 +1,17 @@
+---
+- name: debug
+  debug:
+    msg: "version match: {{ version_match }}"
+
+- name: Download the base images.
+  get_url:
+    url: '{{ item.url }}'
+    checksum: '{{ item.checksum }}'
+    dest: '{{ pool_mount }}/{{ item.image_name }}'
+  register: imagedownloaded
+  when: 'version_match == item.mnaio_version'
+  with_items: '{{ base_images }}'
+
+- name: refresh the pool
+  shell: virsh pool-refresh {{ pool_name }}
+  when: imagedownloaded.changed

@@ -1,0 +1,35 @@
+---
+- name: Create libvirt resources
+  theforeman.foreman.compute_resource:
+    validate_certs: no
+    username: '{{ foreman_username }}'
+    password: '{{ foreman_password }}'
+    server_url: '{{ foreman_url }}'
+    locations: '{{ item.locations }}'
+    organizations: '{{ item.organizations }}'
+    name: '{{ item.name }}' 
+    provider: '{{ item.provider }}'
+    provider_params:
+      url: '{{ item.url }}'
+  loop: '{{ foreman_compute_resources_libvirt }}'
+  tags:
+    - create_libvirt_resources
+  
+- name: Create libvirt images for a resource
+  theforeman.foreman.image:
+    validate_certs: no
+    username: '{{ foreman_username }}'
+    password: '{{ foreman_password }}'
+    server_url: '{{ foreman_url }}'
+    compute_resource: '{{ item.0.name }}'
+    uuid: '{{ base_image_path }}/{{ item.1.image_name }}'
+    name: '{{ item.1.image_name }}'
+    image_username: '{{ item.1.username }}'
+    operatingsystem: '{{ item.1.operatingsystem }}'
+    architecture: '{{ item.1.architecture }}'
+    user_data: '{{ item.1.user_data }}'
+  when: 'version_match == item.1.mnaio_version'
+  loop: "{{ foreman_compute_resources_libvirt |product(base_images)|list }}"
+  tags:
+    - create_libvirt_resources
+

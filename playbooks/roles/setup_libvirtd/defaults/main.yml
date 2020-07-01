@@ -1,0 +1,34 @@
+---
+
+##########################################################
+# Disk prefix to use for the /var/lib/libvirt/images/ mount
+# Right now it just supports nvme or scsi or auto
+# Auto picks nvme over scsi
+##########################################################
+#disk_type: "nvme"
+#disk_type: "scsi"
+disk_type: "auto"
+
+# You can override if needed.
+data_devices: []
+
+# Volume info
+volume_group_name: "libvirtd00"
+volume_name: "images00"
+volume_size: "100%VG"
+pool_filesystem: "xfs"
+pool_mount: "/var/lib/libvirt/images"
+pool_mkfs_opts: "-K"
+pool_name: "images"
+
+# Provisioning/external/host network (nat bridge for external access)
+provisioning_netmask: "255.255.255.0"
+provisioning_gateway_ip: "192.168.100.1" 
+provisioning_name: "provisioning"
+
+trunk_name: "trunk"
+
+storagerepl_name: "storagerepl"
+
+
+
