@@ -1,0 +1,13 @@
+---
+foreman_repositories_version: "1.23"
+katello_repositories_version: "3.13"
+foreman_installer_admin_password: "changeme"
+foreman_installer_options: 
+  - "--enable-foreman-compute-openstack"
+  - "--enable-foreman-compute-libvirt"
+  - "--foreman-proxy-dhcp=true"
+  - "--foreman-proxy-dhcp-provider=libvirt"
+  - "--foreman-proxy-dns=true"
+  - "--foreman-proxy-dns-provider=libvirt"
+  - "--foreman-proxy-libvirt-network=provisioning"
+  - "--foreman-proxy-libvirt-connection='qemu+ssh://root@{{ ansible_default_ipv4.address }}/system'"

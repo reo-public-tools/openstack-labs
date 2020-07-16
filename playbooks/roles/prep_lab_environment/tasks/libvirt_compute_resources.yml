@@ -33,3 +33,44 @@
   tags:
     - create_libvirt_resources
 
+- name: Make sure the new orgs are attached to the default smart proxy
+  shell: |
+    #/bin/bash
+    /usr/bin/hammer proxy info --id 1 | grep 'Lab Location'
+    if [ $? != 0 ]; then
+      /usr/bin/hammer proxy update --id 1 --locations "Default Location","Lab Location"
+    fi
+
+    /usr/bin/hammer proxy info --id 1 | grep 'Lab Organization'
+    if [ $? != 0 ]; then
+      /usr/bin/hammer proxy update --id 1 --organizations "Default Organization","Lab Organization"
+    fi
+  tags:
+    - create_libvirt_resources
+
+- name: Create subnet this libvirt compute resource
+  theforeman.foreman.subnet:
+    validate_certs: no
+    username: '{{ foreman_username }}'
+    password: '{{ foreman_password }}'
+    server_url: '{{ foreman_url }}'
+    state: present
+    name: '{{ item.provisioning_subnet.subnet_name }}'
+    boot_mode: '{{ item.provisioning_subnet.subnet_bootmode }}'
+    description: '{{ item.provisioning_subnet.subnet_description }}'
+    domains: '{{ item.provisioning_subnet.subnet_domains }}'
+    from_ip: '{{ item.provisioning_subnet.subnet_dhcp_from }}'
+    to_ip: '{{ item.provisioning_subnet.subnet_dhcp_to }}'
+    gateway: '{{ item.provisioning_subnet.subnet_gateway }}'
+    ipam: '{{ item.provisioning_subnet.subnet_ipam }}'
+    mask: '{{ item.provisioning_subnet.subnet_mask }}'
+    network: '{{ item.provisioning_subnet.subnet_network }}'
+    network_type: '{{ item.provisioning_subnet.subnet_type }}'
+    locations: '{{ item.provisioning_subnet.subnet_locations }}'
+    organizations: '{{ item.provisioning_subnet.subnet_organizations }}'
+    dhcp_proxy: '{{ ansible_fqdn }}'
+    dns_proxy: '{{ ansible_fqdn }}'
+  loop: '{{ foreman_compute_resources_libvirt }}'
+  tags:
+    - create_libvirt_resources
+

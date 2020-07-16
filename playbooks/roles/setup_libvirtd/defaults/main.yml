@@ -22,9 +22,12 @@ pool_mkfs_opts: "-K"
 pool_name: "images"
 
 # Provisioning/external/host network (nat bridge for external access)
-provisioning_netmask: "255.255.255.0"
-provisioning_gateway_ip: "192.168.100.1" 
 provisioning_name: "provisioning"
+provisioning_network_cidr: "172.0.60.0/22"
+provisioning_netmask: "255.255.252.0"
+provisioning_gateway_ip: "172.0.60.1" 
+provisioning_range_start: "172.0.60.101"
+provisioning_range_end: "172.0.63.254"
 
 trunk_name: "trunk"
 

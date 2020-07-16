@@ -1,7 +1,7 @@
 #!/bin/bash
 
 yum -y groupinstall "Development Tools"
-yum -y install libvirt-devel python3-devel
+yum -y install libvirt-devel python3-devel python3 python3-pip ansible
 
 VENV_LOC="./katello_venv"
 

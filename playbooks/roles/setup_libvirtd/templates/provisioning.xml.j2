@@ -1,7 +1,11 @@
 <network>
   <name>{{ provisioning_name }}</name>
   <forward mode='nat'/>
+  <domain name='{{ lab_base_domain_name }}'/>
   <bridge name='{{ provisioning_name }}' stp='on' delay='0'/>
-  <ip address='{{ provisioning_gateway_ip }}' netmask='{{ provisioning_netmask }}' />
+  <ip address='{{ provisioning_gateway_ip }}' netmask='{{ provisioning_netmask }}' >
+    <dhcp>
+      <range start='{{ provisioning_range_start }}' end='{{ provisioning_range_end }}'/>
+    </dhcp>
+  </ip>
 </network>
-
