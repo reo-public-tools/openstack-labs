@@ -69,7 +69,6 @@
     locations: '{{ item.provisioning_subnet.subnet_locations }}'
     organizations: '{{ item.provisioning_subnet.subnet_organizations }}'
     dhcp_proxy: '{{ ansible_fqdn }}'
-    dns_proxy: '{{ ansible_fqdn }}'
   loop: '{{ foreman_compute_resources_libvirt }}'
   tags:
     - create_libvirt_resources

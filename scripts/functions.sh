@@ -67,8 +67,6 @@ function deploy_katello_mnaio {
     if [ $? != 0 ]; then
       echo "The foreman user is unable to ssh in as root with the ssh key"
       exit 255
-    else
-      
     fi
 
     # Set up foreman-proxy ssh key to use for libvirt connectivity.

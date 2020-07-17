@@ -10,4 +10,5 @@ foreman_installer_options:
   - "--foreman-proxy-dns=true"
   - "--foreman-proxy-dns-provider=libvirt"
   - "--foreman-proxy-libvirt-network=provisioning"
+  - "--enable-foreman-plugin-hooks"
   - "--foreman-proxy-libvirt-connection='qemu+ssh://root@{{ ansible_default_ipv4.address }}/system'"
