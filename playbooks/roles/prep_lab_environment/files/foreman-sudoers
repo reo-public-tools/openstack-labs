@@ -1,0 +1,2 @@
+foreman ALL = NOPASSWD : /usr/bin/hammer
+

@@ -6,3 +6,13 @@
   service:
     name: foreman-proxy
     state: restarted
+
+- name: Fix hook permissions
+  shell: |
+    find /usr/share/foreman/config/hooks/ -type f -exec chmod 755 {} \;
+    restorecon -RvF /usr/share/foreman/config/hooks
+
+- name: Restart httpd
+  service:
+    name: httpd
+    state: restarted

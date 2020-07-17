@@ -1,0 +1,39 @@
+---
+- name: Copy of the selinux foreman_mnaio_selinux_fixes.te
+  copy:
+    src: foreman_mnaio_selinux_fixes.te
+    dest: /root/foreman_mnaio_selinux_fixes.te
+    owner: root
+    group: root
+    mode: 0644
+  register: sepolchange
+
+- name: Run selinux commands to apply the selinux fixes
+  shell: |
+    checkmodule -M -m -o foreman_mnaio_selinux_fixes.mod foreman_mnaio_selinux_fixes.te
+    semodule_package -o foreman_mnaio_selinux_fixes.pp -m foreman_mnaio_selinux_fixes.mod
+    semodule -i foreman_mnaio_selinux_fixes.pp
+  args:
+    chdir: /root/
+  when: sepolchange.changed
+
+- name: Install packages needed by the hooks
+  yum:
+    name: "{{ mnaio_packages }}"
+    state: present
+
+- name: Copy the hooks over
+  copy:
+    src: foreman_hooks/
+    dest: /usr/share/foreman/config/hooks/
+  notify:
+    - Fix hook permissions
+    - Restart httpd
+
+- name: Allow foreman to use hammer from sudo
+  copy:
+    src: foreman-sudoers
+    dest: /etc/sudoers.d/foreman
+    owner: root
+    group: root
+    mode: 0440

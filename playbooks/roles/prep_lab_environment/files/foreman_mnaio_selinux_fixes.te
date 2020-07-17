@@ -1,0 +1,42 @@
+module foreman_mnaio_selinux_fixes 1.0;
+
+require {
+	type admin_home_t;
+	type httpd_t;
+	type load_policy_t;
+	type setfiles_t;
+	type chkpwd_t;
+	type bin_t;
+	type sshd_t;
+	type cache_home_t;
+	type sudo_exec_t;
+	type passenger_t;
+	class process { noatsecure rlimitinh setrlimit siginh };
+	class capability { audit_write net_admin };
+	class file { append execute execute_no_trans getattr ioctl lock open read write };
+        class dir { getattr open read search };
+	class netlink_audit_socket { create nlmsg_relay read write };
+}
+
+#============= httpd_t ==============
+allow httpd_t self:capability net_admin;
+
+#============= load_policy_t ==============
+allow load_policy_t bin_t:file execute;
+
+#============= passenger_t ==============
+allow passenger_t admin_home_t:dir read;
+allow passenger_t admin_home_t:file { append getattr ioctl lock open read write };
+allow passenger_t cache_home_t:dir { getattr open read search };
+allow passenger_t cache_home_t:file { getattr ioctl open read };
+allow passenger_t self:capability audit_write;
+allow passenger_t self:netlink_audit_socket { create nlmsg_relay };
+allow passenger_t self:netlink_audit_socket { read write };
+allow passenger_t self:process setrlimit;
+allow passenger_t sudo_exec_t:file { execute execute_no_trans getattr open read };
+
+#============= setfiles_t ==============
+allow setfiles_t bin_t:file execute;
+
+#============= sshd_t ==============
+allow sshd_t chkpwd_t:process { noatsecure rlimitinh siginh };

@@ -1,4 +1,9 @@
 ---
 
+virtualbmc_repo_package: https://www.rdoproject.org/repos/rdo-release.rpm
+
 libvirtd_packages:
   - "@^virtualization-host-environment"
+  - "python2-virtualbmc"
+
+

@@ -54,3 +54,9 @@
   become: false
   tags:
     - provision_host_groups
+
+- include: foreman_hooks.yml
+  when: "foreman_compute_resources_libvirt is defined"
+  become: true
+  tags:
+    - foreman_hooks

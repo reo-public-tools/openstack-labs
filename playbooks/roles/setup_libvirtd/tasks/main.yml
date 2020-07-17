@@ -1,12 +1,23 @@
 ---
+- name: Enable the rdo repo for the virtualbmc install
+  yum:
+    name: "{{ virtualbmc_repo_package }}"
+    state: present
+
 - name: Install required package groups
   yum:
     name: '{{ libvirtd_packages }}'
     state: present
 
-- name: Make sure the services is enabled and started
+- name: Make sure the libvirtd service is enabled and started
   service:
     name: libvirtd
+    enabled: yes
+    state: started  
+
+- name: Make sure the virtualbmc service is enabled and started
+  service:
+    name: virtualbmc
     enabled: yes
     state: started  
 
