@@ -73,3 +73,17 @@
   tags:
     - create_libvirt_resources
 
+- name: Add compute profiles
+  theforeman.foreman.compute_profile:
+    validate_certs: no
+    username: '{{ foreman_username }}'
+    password: '{{ foreman_password }}'
+    server_url: '{{ foreman_url }}'
+    state: present
+    name: '{{ item.name }}'
+    compute_attributes: '{{ item.compute_attributes }}'
+  with_items: '{{ foreman_compute_profiles }}'
+  delegate_to: localhost
+  tags:
+    - create_compute_profiles
+

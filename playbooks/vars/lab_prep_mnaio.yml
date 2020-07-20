@@ -270,174 +270,27 @@ foreman_provisioning_template_operating_systems:
 # the db after utilizing the GUI to set them.
 ##################################################################
 foreman_compute_profiles:
-  - name: "ironic-standard_baremetal-ubuntu-bionic"
+  - name: "osa-infra-ubuntu-bionic"
     compute_attributes: 
-      - compute_resource: "phobos-int.rpc.rackspace.com"
+      - compute_resource: "libvirt-mnaio"
         vm_attrs:
-          flavor_ref: '9'
-          availability_zone: "nova"
-          image_ref: "127e41bd-eb08-4214-bd58-d6b2d3a63ec1"
-          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
-          security_groups:
-          - ''
-          - default
-          nics:
-          - ''
-          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
-          network: ''
-          boot_from_volume: 'false'
-          size_gb: ''
-          scheduler_hint_filter: ''
-  - name: "ironic-standard_baremetal-ubuntu-xenial"
-    compute_attributes: 
-      - compute_resource: "phobos-int.rpc.rackspace.com"
-        vm_attrs:
-          flavor_ref: '9'
-          availability_zone: "nova"
-          image_ref: "4ee7e5a8-05b2-473a-bc6a-44139ad9548a"
-          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
-          security_groups:
-          - ''
-          - default
-          nics:
-          - ''
-          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
-          network: ''
-          boot_from_volume: 'false'
-          size_gb: ''
-          scheduler_hint_filter: ''
-  - name: "ironic-storage-perf_baremetal-ubuntu-bionic"
-    compute_attributes: 
-      - compute_resource: "phobos-int.rpc.rackspace.com"
-        vm_attrs:
-          flavor_ref: '14'
-          availability_zone: "nova"
-          image_ref: "127e41bd-eb08-4214-bd58-d6b2d3a63ec1"
-          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
-          security_groups:
-          - ''
-          - default
-          nics:
-          - ''
-          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
-          network: ''
-          boot_from_volume: 'false'
-          size_gb: ''
-          scheduler_hint_filter: ''
-  - name: "ironic-storage-perf_baremetal-ubuntu-xenial"
-    compute_attributes: 
-      - compute_resource: "phobos-int.rpc.rackspace.com"
-        vm_attrs:
-          flavor_ref: '14'
-          availability_zone: "nova"
-          image_ref: "4ee7e5a8-05b2-473a-bc6a-44139ad9548a"
-          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
-          security_groups:
-          - ''
-          - default
-          nics:
-          - ''
-          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
-          network: ''
-          boot_from_volume: 'false'
-          size_gb: ''
-          scheduler_hint_filter: ''
-  - name: "ironic-standard_baremetal-centos-8"
-    compute_attributes: 
-      - compute_resource: "phobos-int.rpc.rackspace.com"
-        vm_attrs:
-          flavor_ref: '9'
-          availability_zone: "nova"
-          image_ref: "adb16d8f-d31f-4053-b7d5-3e38c0e9b010"
-          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
-          security_groups:
-          - ''
-          - default
-          nics:
-          - ''
-          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
-          network: ''
-          boot_from_volume: 'false'
-          size_gb: ''
-          scheduler_hint_filter: ''
-  - name: "ironic-storage-perf_baremetal-centos-8"
-    compute_attributes: 
-      - compute_resource: "phobos-int.rpc.rackspace.com"
-        vm_attrs:
-          flavor_ref: '14'
-          availability_zone: "nova"
-          image_ref: "adb16d8f-d31f-4053-b7d5-3e38c0e9b010"
-          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
-          security_groups:
-          - ''
-          - default
-          nics:
-          - ''
-          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
-          network: ''
-          boot_from_volume: 'false'
-          size_gb: ''
-          scheduler_hint_filter: ''
-  - name: "ironic-standard_baremetal-rhel-8"
-    compute_attributes: 
-      - compute_resource: "phobos-int.rpc.rackspace.com"
-        vm_attrs:
-          flavor_ref: '9'
-          availability_zone: "nova"
-          image_ref: "1c6263a9-148a-4cec-bc97-83c96ce04bda"
-          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
-          security_groups:
-          - ''
-          - default
-          nics:
-          - ''
-          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
-          network: ''
-          boot_from_volume: 'false'
-          size_gb: ''
-          scheduler_hint_filter: ''
-  - name: "ironic-storage-perf_baremetal-rhel-8"
-    compute_attributes: 
-      - compute_resource: "phobos-int.rpc.rackspace.com"
-        vm_attrs:
-          flavor_ref: '14'
-          availability_zone: "nova"
-          image_ref: "1c6263a9-148a-4cec-bc97-83c96ce04bda"
-          tenant_id: "6725de754e5e4f0e914aed7ec1247da0"
-          security_groups:
-          - ''
-          - default
-          nics:
-          - ''
-          - "8dd6207d-a1f5-4dfe-b97d-a8c967eb8548"
-          network: ''
-          boot_from_volume: 'false'
-          size_gb: ''
-          scheduler_hint_filter: ''
-        
-      
-           
-#foreman=> select * from compute_attributes;
-# id | compute_profile_id | compute_resource_id |      name       |                        vm_attrs                         |         created_at         |         updated_at         
-#----+--------------------+---------------------+-----------------+---------------------------------------------------------+----------------------------+----------------------------
-#  1 |                  4 |                   9 | ironic-standard | --- !ruby/hash:ActiveSupport::HashWithIndifferentAccess+| 2019-11-20 17:52:20.085768 | 2019-11-20 17:52:20.085768
-#    |                    |                     |                 | flavor_ref: '9'                                        +|                            | 
-#    |                    |                     |                 | availability_zone: nova                                +|                            | 
-#    |                    |                     |                 | image_ref: 127e41bd-eb08-4214-bd58-d6b2d3a63ec1        +|                            | 
-#    |                    |                     |                 | tenant_id: 6725de754e5e4f0e914aed7ec1247da0            +|                            | 
-#    |                    |                     |                 | security_groups:                                       +|                            | 
-#    |                    |                     |                 | - ''                                                   +|                            | 
-#    |                    |                     |                 | - default                                              +|                            | 
-#    |                    |                     |                 | nics:                                                  +|                            | 
-#    |                    |                     |                 | - ''                                                   +|                            | 
-#    |                    |                     |                 | - 8dd6207d-a1f5-4dfe-b97d-a8c967eb8548                 +|                            | 
-#    |                    |                     |                 | network: ''                                            +|                            | 
-#    |                    |                     |                 | boot_from_volume: 'false'                              +|                            | 
-#    |                    |                     |                 | size_gb: ''                                            +|                            | 
-#    |                    |                     |                 | scheduler_hint_filter: ''                              +|                            | 
-#    |                    |                     |                 |                                                         |                            | 
-#
-    
+          cpus: "12"
+          cpu_mode: "default"
+          memory: "17179869184"     # 16384 x 1024 x 1024
+          image_id: "/var/lib/libvirt/images/Ubuntu18.04.qcow2"
+          nics_attributes:
+            0:
+              type: "network"
+              network: "provisioning"
+              bridge: ""
+              model: "virtio"
+          volumes_attributes:
+            0:
+              pool_name: "images"
+              capacity: "16G"
+              allocation: "0G"
+              format_type: "qcow2"
+
 
 
 #############################################################
