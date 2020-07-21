@@ -71,10 +71,11 @@ if [ ! -e .setup_mnaio ]; then
 
   #echo ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml | tee setup_mnaio.log
   #stdbuf -i0 -e0 -o0 ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml | tee setup_mnaio.log
-  echo ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml --tags create_organization
-  #stdbuf -i0 -e0 -o0 ../katello_venv/bin/ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml --tags setup_libvirtd,create_organization,create_location,create_users,create_domains,create_subnets,create_operatingsystems,update_foreman_settings,update_foreman_global_parameters,create_libvirt_resources,provisioning_templates
+  #echo ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml --tags create_organization
+  #stdbuf -i0 -e0 -o0 ../katello_venv/bin/ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml --tags setup_libvirtd,create_organization,create_location,create_users,create_domains,create_subnets,create_operatingsystems,update_foreman_settings,update_foreman_global_parameters #,create_libvirt_resources,provisioning_templates
   #stdbuf -i0 -e0 -o0 ../katello_venv/bin/ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml --tags create_libvirt_resources
-  ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml --tags create_compute_profiles,create_hostgroups,provision_environments
+  ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml --tags create_operatingsystems,provisioning_templates,create_libvirt_resources,create_compute_profiles,create_hostgroups,provision_environments,foreman_hooks
+  #../katello_venv/bin/ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml --tags setup_libvirtd,create_organization,create_location,create_users,create_domains,create_subnets,create_operatingsystems,update_foreman_settings,update_foreman_global_parameters #,create_libvirt_resources,provisioning_templates
 
   if [ $? == 0 ]; then
     touch ../.setup_mnaio

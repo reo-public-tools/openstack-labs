@@ -270,7 +270,7 @@ foreman_compute_resources_libvirt:
 foreman_provisioning_template_operating_systems:
   - "Ubuntu Xenial"
   - "Ubuntu Bionic"
-  - "CentOS 8"
+  - "RHEL 7"
   - "RHEL 8"
 
 #############################################################

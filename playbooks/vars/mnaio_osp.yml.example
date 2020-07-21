@@ -1,0 +1,222 @@
+---
+
+# mnaio variables for OSP only
+base_images:
+  - image_name: "RHEL8.qcow2"
+    mnaio_version: "OSP16"
+    url: "http://removed/rhel-server-7.8-x86_64-kvm.qcow2"
+    checksum: "sha256:8e34e57feb68d19ba9ffbefcd3f662b1a3437c9f7d811449c5ad452adda64384"
+    user_data: true
+    username: "admin"
+    operatingsystem: "RHEL 8"
+    architecture: "x86_64"
+  - image_name: "RHEL7.qcow2"
+    mnaio_version: "OSP13"
+    url: "http://removed/rhel-server-7.8-x86_64-kvm.qcow2"
+    checksum: "sha256:ce4943d38e00a5c81272ebd3f3542b2d9557382d1c331c46ed553fdcca778b2d"
+    user_data: true
+    username: "admin"
+    operatingsystem: "RHEL 7"
+    architecture: "x86_64"
+
+
+
+##################################################################
+# Info for compute profiles
+# These map out flavors to images along with some other settings
+# to make provisioning easier. These values were pulled from
+# the db after utilizing the GUI to set them.
+##################################################################
+compute_profile_image_id: "/var/lib/libvirt/images/RHEL7.qcow2"
+compute_profile_suffix: "rhel-7"
+foreman_compute_profiles:
+  - name: "osp-undercloud-{{ compute_profile_suffix }}"
+    compute_attributes: 
+      - compute_resource: "libvirt-mnaio"
+        vm_attrs:
+          cpus: "6"
+          cpu_mode: "default"
+          memory: "17179869184"     # 16384 x 1024 x 1024
+          image_id: "{{ compute_profile_image_id }}"
+          nics_attributes:
+            1:
+              type: "network"
+              network: "default"
+              bridge: ""
+              model: "virtio"
+            2:
+              type: "network"
+              network: "provisioning"
+              bridge: ""
+              model: "virtio"
+            3:
+              type: "network"
+              network: "trunk"
+              bridge: ""
+              model: "virtio"
+          volumes_attributes:
+            0:
+              pool_name: "images"
+              capacity: "90G"
+              allocation: "0G"
+              format_type: "qcow2"
+  - name: "osp-controller-{{ compute_profile_suffix }}"
+    compute_attributes: 
+      - compute_resource: "libvirt-mnaio"
+        vm_attrs:
+          cpus: "4"
+          cpu_mode: "default"
+          memory: "17179869184"     # 16384 x 1024 x 1024
+          image_id: "{{ compute_profile_image_id }}"
+          nics_attributes:
+            1:
+              type: "network"
+              network: "provisioning"
+              bridge: ""
+              model: "virtio"
+            2:
+              type: "network"
+              network: "trunk"
+              bridge: ""
+              model: "virtio"
+          volumes_attributes:
+            0:
+              pool_name: "images"
+              capacity: "90G"
+              allocation: "0G"
+              format_type: "qcow2"
+  - name: "osp-compute-{{ compute_profile_suffix }}"
+    compute_attributes: 
+      - compute_resource: "libvirt-mnaio"
+        vm_attrs:
+          cpus: "4"
+          cpu_mode: "default"
+          memory: "8589934592"     # 8192 x 1024 x 1024
+          image_id: "{{ compute_profile_image_id }}"
+          nics_attributes:
+            1:
+              type: "network"
+              network: "provisioning"
+              bridge: ""
+              model: "virtio"
+            2:
+              type: "network"
+              network: "trunk"
+              bridge: ""
+              model: "virtio"
+          volumes_attributes:
+            0:
+              pool_name: "images"
+              capacity: "90G"
+              allocation: "0G"
+              format_type: "qcow2"
+  - name: "osp-ceph-{{ compute_profile_suffix }}"
+    compute_attributes: 
+      - compute_resource: "libvirt-mnaio"
+        vm_attrs:
+          cpus: "2"
+          cpu_mode: "default"
+          memory: "8589934592"     # 8192 x 1024 x 1024
+          image_id: "{{ compute_profile_image_id }}"
+          nics_attributes:
+            1:
+              type: "network"
+              network: "provisioning"
+              bridge: ""
+              model: "virtio"
+            2:
+              type: "network"
+              network: "trunk"
+              bridge: ""
+              model: "virtio"
+          volumes_attributes:
+            0:
+              pool_name: "images"
+              capacity: "90G"
+              allocation: "0G"
+              format_type: "qcow2"
+            1:
+              pool_name: "images"
+              capacity: "20G"
+              allocation: "0G"
+              format_type: "qcow2"
+            2:
+              pool_name: "images"
+              capacity: "20G"
+              allocation: "0G"
+              format_type: "qcow2"
+            3:
+              pool_name: "images"
+              capacity: "20G"
+              allocation: "0G"
+              format_type: "qcow2"
+            4:
+              pool_name: "images"
+              capacity: "20G"
+              allocation: "0G"
+              format_type: "qcow2"
+
+
+##########################################################
+# We will create some host groups to map to various roles
+# being tested in the labs here.
+##########################################################
+operatingsystem: "RHEL 7"
+host_groups:
+  - name: "osp-undercloud-{{ compute_profile_suffix }}"
+    architecture: "x86_64"
+    operatingsystem: "{{ operatingsystem }}"
+    description: "OSP undercloud node on kvm vm running rhel"
+    compute_profile: "osp-undercloud-{{ compute_profile_suffix }}"
+    compute_resource: "libvirt-mnaio"
+    environment: "labprod"
+    puppet_proxy: "{{ ansible_fqdn }}"
+    puppet_ca_proxy: "{{ ansible_fqdn }}"
+    organizations:
+      - '{{ lab_org_name }}'
+    locations:
+      - '{{ lab_location_name }}'
+    root_pass: "{{ instance_admin_pass }}"
+  - name: "osp-controller-{{ compute_profile_suffix }}"
+    architecture: "x86_64"
+    operatingsystem: "{{ operatingsystem }}"
+    description: "OSP controller node on kvm vm running rhel"
+    compute_profile: "osp-controller-{{ compute_profile_suffix }}"
+    compute_resource: "libvirt-mnaio"
+    environment: "labprod"
+    puppet_proxy: "{{ ansible_fqdn }}"
+    puppet_ca_proxy: "{{ ansible_fqdn }}"
+    organizations:
+      - '{{ lab_org_name }}'
+    locations:
+      - '{{ lab_location_name }}'
+    root_pass: "{{ instance_admin_pass }}"
+  - name: "osp-compute-{{ compute_profile_suffix }}"
+    architecture: "x86_64"
+    operatingsystem: "{{ operatingsystem }}"
+    description: "OSP compute node on kvm vm running rhel"
+    compute_profile: "osp-compute-{{ compute_profile_suffix }}"
+    compute_resource: "libvirt-mnaio"
+    environment: "labprod"
+    puppet_proxy: "{{ ansible_fqdn }}"
+    puppet_ca_proxy: "{{ ansible_fqdn }}"
+    organizations:
+      - '{{ lab_org_name }}'
+    locations:
+      - '{{ lab_location_name }}'
+    root_pass: "{{ instance_admin_pass }}"
+  - name: "osp-ceph-{{ compute_profile_suffix }}"
+    architecture: "x86_64"
+    operatingsystem: "{{ operatingsystem }}"
+    description: "OSP ceph node on kvm vm running rhel"
+    compute_profile: "osp-ceph-{{ compute_profile_suffix }}"
+    compute_resource: "libvirt-mnaio"
+    environment: "labprod"
+    puppet_proxy: "{{ ansible_fqdn }}"
+    puppet_ca_proxy: "{{ ansible_fqdn }}"
+    organizations:
+      - '{{ lab_org_name }}'
+    locations:
+      - '{{ lab_location_name }}'
+    root_pass: "{{ instance_admin_pass }}"
+
