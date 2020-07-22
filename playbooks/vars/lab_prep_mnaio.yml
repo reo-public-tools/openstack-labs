@@ -253,6 +253,7 @@ foreman_compute_resources_libvirt:
       subnet_gateway: "{{ provisioning_gateway_ip }}"
       subnet_bootmode: "DHCP"
       subnet_domains:
+	- "openstacklocal"
         - "lab1.{{ lab_base_domain_name }}"
       subnet_locations:
         - "{{ lab_location_name }}"
