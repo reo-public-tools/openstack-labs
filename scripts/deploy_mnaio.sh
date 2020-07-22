@@ -92,4 +92,4 @@ deactivate
 # Compile any go code
 ########################
 
-go_compile
+install_oslabs

@@ -112,22 +112,32 @@ function install_ansible_module_foreman {
 }
 
 
-function go_compile {
+function install_oslabs {
 
-  # Make sure golang is installed
-  rpm -qi golang > /dev/null 2>&1
-  if [ $? != 0 ]; then
-    yum -y install golang
+  if [ ! -e ./.install_oslabs ]; then
+
+    # Make sure golang is installed
+    rpm -qi golang > /dev/null 2>&1
+    if [ $? != 0 ]; then
+      yum -y install golang
+    fi
+  
+    # Run the compile and install
+    pushd go > /dev/null
+    . sourceme
+    make install
+    if [ $? == 0 ]; then
+      touch ../.install_oslabs
+    else
+      echo "Oslabs install failed"
+      exit 255
+    fi
+    popd > /dev/null
+  
+    # Update the config
+    HOSTIP=$(awk '/^katello_host_ip/{print $2}' ./playbooks/vars/katello-generated.yml) 
+    sed -i -e "s/^foreman_url.*/foreman_url: \"https:\/\/${HOSTIP}\"/g"  /etc/oslabs/oslabs.yml
+
   fi
 
-  pushd go > /dev/null
-  . sourceme
-  make all
-  if [ $? == 0 ]; then
-    touch ../.go_compile
-  else
-    echo "Go compile failed"
-    exit 255
-  fi
-  popd go > /dev/null
 }
