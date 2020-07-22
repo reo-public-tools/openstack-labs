@@ -14,7 +14,7 @@ function deploy_katello_mnaio {
     if [ ! -e "./forklift" ]; then
       git clone https://github.com/theforeman/forklift.git
     fi
-    pushd forklift
+    pushd forklift > /dev/null
     stdbuf -i0 -e0 -o0 ansible-playbook \
           -i ./inventories/localhost \
           -e @../playbooks/vars/forklift_mnaio.yml \
@@ -29,7 +29,7 @@ function deploy_katello_mnaio {
       echo "The forklift playbooks failed."
       exit 255
     fi
-    popd
+    popd > /dev/null
 
     # dhcp and dns need enabled.  the installer sets it up http for some reason.
     FPRESTART=0
@@ -103,10 +103,31 @@ function deploy_katello_mnaio {
 function install_ansible_module_foreman {
 
   # Run the install if not already completed
-  pushd playbooks
+  pushd playbooks > /dev/null
   if [ ! -e ../.install_ansible_module_foreman ]; then
     ansible-galaxy collection install theforeman.foreman
     touch ../.install_ansible_module_foreman
   fi
-  popd
+  popd > /dev/null
+}
+
+
+function go_compile {
+
+  # Make sure golang is installed
+  rpm -qi golang > /dev/null 2>&1
+  if [ $? != 0 ]; then
+    yum -y install golang
+  fi
+
+  pushd go > /dev/null
+  . sourceme
+  make all
+  if [ $? == 0 ]; then
+    touch ../.go_compile
+  else
+    echo "Go compile failed"
+    exit 255
+  fi
+  popd go > /dev/null
 }

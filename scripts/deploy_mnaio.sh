@@ -25,18 +25,21 @@ fi
 #######
 
 # Install apypie for python2 > /dev/null 2>&1
-rpm -qi python2-pip
+rpm -qi python2-pip > /dev/null 2>&1
 if [ $? != 0 ]; then
-   echo "Installing python2-pip for apypie"
-   yum -y install python2-pip
+  echo "Installing python2-pip for apypie"
+  yum -y install python2-pip
 fi
-pip install apypie
+pip show apypie > /dev/null 2>&1
+if [ $? != 0 ]; then
+  pip install apypie
+fi
 
 # Install rubygen-ruby-libvirt for libvirt dhcp smart proxy
 rpm -qi rubygem-ruby-libvirt > /dev/null 2>&1
 if [ $? != 0 ]; then
-   echo "Installing rubygen-ruby-libvirt package for libvirt dhcp smart proxy"
-   yum -y install rubygem-ruby-libvirt
+  echo "Installing rubygen-ruby-libvirt package for libvirt dhcp smart proxy"
+  yum -y install rubygem-ruby-libvirt
 fi
 
 # Run the script to set up the venv if not done already
@@ -64,18 +67,12 @@ install_ansible_module_foreman
 # Run the mnaio setup playbook
 ###############################
 
-rm ./.setup_mnaio
 # Run the setup_mnaio.yml playbook
 if [ ! -e .setup_mnaio ]; then
-  pushd playbooks
+  pushd playbooks > /dev/null
 
-  #echo ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml | tee setup_mnaio.log
-  #stdbuf -i0 -e0 -o0 ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml | tee setup_mnaio.log
-  #echo ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml --tags create_organization
-  #stdbuf -i0 -e0 -o0 ../katello_venv/bin/ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml --tags setup_libvirtd,create_organization,create_location,create_users,create_domains,create_subnets,create_operatingsystems,update_foreman_settings,update_foreman_global_parameters #,create_libvirt_resources,provisioning_templates
-  #stdbuf -i0 -e0 -o0 ../katello_venv/bin/ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml --tags create_libvirt_resources
-  ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml --tags create_operatingsystems,provisioning_templates,create_libvirt_resources,create_compute_profiles,create_hostgroups,provision_environments,foreman_hooks
-  #../katello_venv/bin/ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml --tags setup_libvirtd,create_organization,create_location,create_users,create_domains,create_subnets,create_operatingsystems,update_foreman_settings,update_foreman_global_parameters #,create_libvirt_resources,provisioning_templates
+  echo ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml | tee setup_mnaio.log
+  stdbuf -i0 -e0 -o0 ansible-playbook -i ',localhost' ${ENVADD} setup_mnaio.yml | tee setup_mnaio.log
 
   if [ $? == 0 ]; then
     touch ../.setup_mnaio
@@ -83,12 +80,16 @@ if [ ! -e .setup_mnaio ]; then
     echo "setup_mnaio.yml playbook failed"
     exit 255
   fi
-  popd
+  popd > /dev/null
 fi
-
-
 
 
 # Deactivate the venv
 deactivate
 
+
+########################
+# Compile any go code
+########################
+
+go_compile

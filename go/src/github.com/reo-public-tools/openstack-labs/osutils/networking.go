@@ -5,7 +5,8 @@ import (
         "github.com/gophercloud/gophercloud"
         "github.com/gophercloud/gophercloud/openstack"
         "github.com/gophercloud/gophercloud/openstack/networking/v2/ports"
-        "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
+//        "github.com/gophercloud/gophercloud/openstack/networking/v2/networks"
+        utilnetworks "github.com/gophercloud/utils/openstack/networking/v2/networks"
 )
 
 
@@ -22,7 +23,7 @@ func NetworkNameToID(provider *gophercloud.ProviderClient, networkName string) (
     }
 
     // Use build-in function to get the id from the name
-    netID, err := networks.IDFromName(networkClient, networkName)
+    netID, err := utilnetworks.IDFromName(networkClient, networkName)
     if err != nil {
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return "", err

@@ -5,8 +5,8 @@ import (
         "github.com/gophercloud/gophercloud"
         "github.com/gophercloud/gophercloud/openstack"
         "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
+        utilflavors "github.com/gophercloud/utils/openstack/compute/v2/flavors"
 )
-
 
 func GetFlavorCapability(provider *gophercloud.ProviderClient, flavorName string, key string) (string, error) {
 
@@ -21,7 +21,7 @@ func GetFlavorCapability(provider *gophercloud.ProviderClient, flavorName string
     }
 
     // Convert the flavor name to id
-    flavorID, err := flavors.IDFromName(computeClient, flavorName)
+    flavorID, err := utilflavors.IDFromName(computeClient, flavorName)
     if err != nil {
         _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
         return "", err

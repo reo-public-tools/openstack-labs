@@ -1,7 +1,7 @@
 ##############
 # foreman_url
 ##############
-foreman_url: "https://172.20.41.28"
+foreman_url: "https://172.20.41.68"
 
 ###################################################################################
 # Lab type can be either dynamic or static.
