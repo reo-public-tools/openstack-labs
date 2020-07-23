@@ -31,7 +31,7 @@ type Host struct {
         EnvironmentName          string                     `json:"environment_name,omitempty"`
         Mac                      string                     `json:"mac,omitempty"`
         RealmID                  int                        `json:"realm_id,omitempty"`
-        RealmName                string                     `json:"realm_id,omitempty"`
+        RealmName                string                     `json:"realm_name,omitempty"`
         SpMac                    string                     `json:"sp_mac,omitempty"`
         SpIP                     string                     `json:"sp_ip,omitempty"`
         SpName                   string                     `json:"sp_name,omitempty"`
@@ -117,8 +117,8 @@ type PuppetCaProxy struct {
 }
 type HostParameters struct {
         Name          string      `json:"name,omitempty"`
-        Priority      interface{} `json:"name,omitempty"`
-        ID            int         `json:"name,omitempty"`
+        Priority      interface{} `json:"priority,omitempty"`
+        ID            int         `json:"id,omitempty"`
         Value         interface{} `json:"value,omitempty"`
         ParameterType string      `json:"parameter_type,omitempty"`
         CreatedAt     string      `json:"created_at,omitempty"`
@@ -258,7 +258,7 @@ type NetInterface struct {
 type InterfacePostData struct {
         OrganizationID int     `json:"organization_id,omitempty"`
         LocationID     int     `json:"location_id,omitempty"`
-        HostID         string  `json:"location_id,omitempty"`
+        HostID         string  `json:"host_id,omitempty"`
         Interface NetInterface `json:"interface"`
 }
 
@@ -467,6 +467,209 @@ func CreateHost(url string,
 
 }
 
+// Create a new host
+func CreateSimulatedHost(url string,
+                         session string,
+                         labName string,
+                         hostName string,
+                         hostGroup string,
+                         role string) (Host, error) {
+
+    sysLogPrefix := "theforeman(package).hosts(file).CreateHost(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Creating a new host by the name of %s.", sysLogPrefix, hostName))
+
+    // Init the return value
+    var queryResults Host
+
+    // Get a struct populated with common parameter data
+    globalParams, err := GetGlobalParameters(url, session)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+       return Host{}, err
+    }
+
+    // Convert the location name to id for host creation
+    locationID, err := ConvLocNameToID(url, session, globalParams.LabLocationName)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+       return Host{}, err
+    }
+
+    // Convert the organization name to id for host creation
+    organizationID, err := ConvOrgNameToID(url, session, globalParams.LabOrgName)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+       return Host{}, err
+    }
+
+    // Convert the host group name to an id for host creation
+    hostGroupID, err := ConvHostGroupNameToID(url, session, hostGroup)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+       return Host{}, err
+    }
+
+    // Get domain details to use in the post data
+    domainInfo, err := GetDomainDetails(url, session, labName)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+       return Host{}, err
+    }
+
+    // Set up some subnet name -> id mappings
+    subnetmap := make(map[string]int)
+    for _, curSubnet := range domainInfo.Subnets {
+        subnetmap[curSubnet.Name] = curSubnet.ID
+    }
+
+    // Pull the lab name from the fqdn of the lab name
+    labShortName := strings.ToUpper(strings.Split(labName, ".")[0])
+
+    // Fill out the data structure to be used for creating the domain
+    newHostStruct := HostPostData{
+        Host: NewHostData {
+            Name: hostName,
+            OrganizationID: organizationID,
+            LocationID: locationID,
+            HostgroupID: hostGroupID,
+            DomainID: domainInfo.ID,
+            InterfacesAttributes: InterfacesAttributes{
+                Primary: NetInterface{
+                    Name: hostName,
+                    DomainID: domainInfo.ID,
+                    Primary: true,
+                    Managed: false,
+                    Provision: false,
+                },
+                Management: NetInterface{
+                    Identifier: "br-mgmt",
+                    DomainID: domainInfo.ID,
+                    SubnetID: subnetmap[fmt.Sprintf("%s-MGMT",labShortName)],
+                    Primary: false,
+                    Managed: false,
+                    Provision: false,
+                    Type: "bridge",
+                },
+                Storage: NetInterface{
+                    Identifier: "br-storage",
+                    DomainID: domainInfo.ID,
+                    SubnetID: subnetmap[fmt.Sprintf("%s-STORAGE",labShortName)],
+                    Primary: false,
+                    Managed: false,
+                    Provision: false,
+                    Type: "bridge",
+                },
+                StorageManagement: NetInterface{
+                    Identifier: "br-stor-mgmt",
+                    DomainID: domainInfo.ID,
+                    SubnetID: subnetmap[fmt.Sprintf("%s-STOR-MGMT",labShortName)],
+                    Primary: false,
+                    Managed: false,
+                    Provision: false,
+                    Type: "bridge",
+                },
+                Tenant: NetInterface{
+                    Identifier: "br-vxlan",
+                    DomainID: domainInfo.ID,
+                    SubnetID: subnetmap[fmt.Sprintf("%s-TENANT",labShortName)],
+                    Primary: false,
+                    Managed: false,
+                    Provision: false,
+                    Type: "bridge",
+                },
+                LBAAS: NetInterface{
+                    Identifier: "br-lbaas",
+                    DomainID: domainInfo.ID,
+                    SubnetID: subnetmap[fmt.Sprintf("%s-LBAAS",labShortName)],
+                    Primary: false,
+                    Managed: false,
+                    Provision: false,
+                    Type: "bridge",
+                },
+                InsideNet: NetInterface{
+                    Identifier: "neutron-internal",
+                    DomainID: domainInfo.ID,
+                    SubnetID: subnetmap[fmt.Sprintf("%s-INSIDE-NET",labShortName)],
+                    Primary: false,
+                    Managed: false,
+                    Provision: false,
+                    Type: "bridge",
+                },
+                GatewayNet: NetInterface{
+                    Identifier: "neutron-gateway",
+                    DomainID: domainInfo.ID,
+                    SubnetID: subnetmap[fmt.Sprintf("%s-GW-NET",labShortName)],
+                    Primary: false,
+                    Managed: false,
+                    Provision: false,
+                    Type: "bridge",
+                },
+            },
+            HostParametersAttributes: []HostParametersAttributes {
+                { Name: "role", Value: role },
+            },
+        },
+    }
+
+    // Convert data to json
+    postData, err := json.Marshal(newHostStruct)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return Host{}, err
+    }
+
+    // Set the query url
+    var requesturl string = fmt.Sprintf("%s/api/hosts", url)
+
+    // Set up the basic request from the url and body
+    req, err := http.NewRequest("POST", requesturl, bytes.NewBufferString(string(postData)))
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return Host{}, err
+    }
+
+    // Make sure we are using the proper content type for the configs api
+    req.Header.Set("Content-Type", "application/json")
+    req.Header.Set("Accept", "application/json,version=2")
+
+    // Set the session Cookie header
+    req.Header.Set("Cookie", fmt.Sprintf("_session_id=%s", session))
+
+    // Disable tls verify
+    tr := &http.Transport{
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+    }
+
+    // Set up the http client and do the request
+    client := &http.Client{Transport: tr}
+    resp, err := client.Do(req)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return Host{}, err
+    }
+    defer resp.Body.Close()
+
+
+    // Read in the body and check status
+    body, _ := ioutil.ReadAll(resp.Body)
+    if resp.StatusCode != 201 {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+        return Host{}, fmt.Errorf("%s %s", sysLogPrefix, string(body))
+    }
+
+    // Convert the body to a byte array
+    bytes := []byte(body)
+
+    // Unmarshall the json byte array into a struct
+    err = json.Unmarshal(bytes, &queryResults)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return Host{}, err
+    }
+
+    // Return the results
+    return queryResults, nil
+}
 
 
 func GetHosts(url string, session string) ([]Host, error) {

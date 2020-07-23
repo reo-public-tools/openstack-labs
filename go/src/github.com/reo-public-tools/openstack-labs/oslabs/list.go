@@ -23,7 +23,7 @@ func List() (error) {
     }
 
     // Get detailed domain list
-    _ = sysLog.Info(fmt.Sprintf("Pulling detailed domain list: %s\n"))
+    _ = sysLog.Info(fmt.Sprintf("Pulling detailed domain list:\n"))
     domainDetails, err := theforeman.GetDomainsWithDetails(labConfig.ForemanURL, session)
     if err != nil {
         return err

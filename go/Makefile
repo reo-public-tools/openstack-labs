@@ -53,7 +53,9 @@ cleandeps:
 
 lint: ./bin/golangci-lint
       
-	./bin/golangci-lint run src/github.com/reo-public-tools/openstack-labs/*
+	./bin/golangci-lint run \
+	    -e 'Command.Parse' \
+	    src/github.com/reo-public-tools/openstack-labs/*
 
 
 

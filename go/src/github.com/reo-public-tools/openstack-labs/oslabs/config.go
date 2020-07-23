@@ -16,6 +16,7 @@ type LabConfig struct {
 	Environment         struct {
                   ForemanHosts        []ForemanHosts        `yaml:"foreman_hosts"`
                   IronicOnIronicHosts []IronicOnIronicHosts `yaml:"ironic_on_ironic_hosts"`
+                  SimulatedHosts      []SimulatedHosts      `yaml:"simulated_hosts"`
 	} `yaml:"environment"`
 }
 
@@ -23,11 +24,20 @@ type ForemanHosts struct {
         Role                  string `yaml:"role"`
         ForemanHostgroup      string `yaml:"foreman-hostgroup"`
         Count                 int    `yaml:"count"`
+        Name                  string `yaml:"name,omitempty"`
+        SimulatorType         string `yaml:"simulator-type,omitempty"`
 }
 
 type IronicOnIronicHosts struct {
         Flavor string `yaml:"flavor"`
         Count  int    `yaml:"count"`
+}
+
+type SimulatedHosts struct {
+        Role                  string `yaml:"role"`
+        ForemanHostgroup      string `yaml:"foreman-hostgroup"`
+        Count                 int    `yaml:"count"`
+        SimulatorName         string `yaml:"simulator-name"`
 }
 
 

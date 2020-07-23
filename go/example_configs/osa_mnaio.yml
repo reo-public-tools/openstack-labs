@@ -1,0 +1,53 @@
+###################################################################################
+# Lab type can be either dynamic or static.
+# These define how the domain is set up in theforman and how
+# the network layer is implemented. 
+#
+# - dynamic: vxlan mesh network created.  No pre-configuration needed.
+# - static: vlan network used by checking out a pre-configured theforeman domain.  
+###################################################################################
+#lab_type: "dynamic"
+lab_type: "static"
+
+
+##############################################################################
+# Public SSH key to use on the new servers to allow access via the phobos vpn
+#
+# Assigned to a new user called 'admin' via cloud-init and provisioning 
+# templates.
+##############################################################################
+pub_ssh_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDeLPLLetqg4eAE87qK7nJiqUW0eUK375ZovJc4iI03RV8vcVaFooUVbd37BZbjeycHtTrOGcc42gtRPmm0FKc4UK5vMED/isC1iH8+LHxaAO/DZLnVQYzRCyL/Z614XWrju5/mY7WlrydZIrPe6MdWfZcha13DoaPtzX7ubsMfWTcOv1NsbBqaE7OYRd3EoryhAF2vaudApfKfse5s81lOcfnuLVBWIeiONWUpxROxUQ1hzCDonSd25w7ues7g4okvC8t7kD/NZVCdpgUk/Ms1oWD3fJfGOvLHU3mdWjvQB2YHfyrRQMgrMQPJg2AGdtSoqRdxN2O/s+Ni9zlUaPMB shan5464@shannnon.mitchell"
+
+##############################################################################
+# Lab environment specifics
+#
+# The mnaio simulator type is colocated with the foreman server for mnaio
+# environments. This is already configured and in place, so no actions are
+# needed to spin it up. We will allow openstack ironic simulators in the 
+# future to allow multiple simulators to be spun up before the simulated 
+# hosts. 
+##############################################################################
+environment: 
+  foreman_hosts:
+  - role: "simulator"
+    name: "libvirt-mnaio"
+    simulator-type: "mnaio"
+    count: 1
+  simulated_hosts:
+  - foreman-hostgroup: "osa-infra-ubuntu-bionic"
+    role: "infra"
+    simulator-name: "libvirt-mnaio"
+    count: 1
+#  - foreman-hostgroup: "osa-infra-ubuntu-bionic"
+#    simulator-name: "libvirt-mnaio"
+#    count: 3
+#  - foreman-hostgroup: "osa-loadbalancer-ubuntu-bionic"
+#    simulator-name: "libvirt-mnaio"
+#    count: 2
+#  - foreman-hostgroup: "osa-compute-ubuntu-bionic"
+#    simulator-name: "libvirt-mnaio"
+#    count: 2
+#  - foreman-hostgroup: "osa-ceph-ubuntu-bionic"
+#    simulator-name: "libvirt-mnaio"
+#    count: 3
+

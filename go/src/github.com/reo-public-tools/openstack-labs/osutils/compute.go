@@ -43,7 +43,7 @@ func GetFlavorCapability(provider *gophercloud.ProviderClient, flavorName string
 func GetFlavorToSystemTypeMappings(provider *gophercloud.ProviderClient) (map[string]string, error) {
 
     sysLogPrefix := "osutils(package).compute(file).GetFlavorToSystemTypeMappings(func):"
-    _ = sysLog.Debug(fmt.Sprintf("%s Getting flavor name to system type mappings for type %s.", sysLogPrefix))
+    _ = sysLog.Debug(fmt.Sprintf("%s Getting flavor name to system type mappings", sysLogPrefix))
 
     stofmap := make(map[string]string)
 

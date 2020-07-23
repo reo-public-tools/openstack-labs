@@ -114,7 +114,7 @@ func GetIronicCapacity(provider *gophercloud.ProviderClient) (IronicCapacityData
 
         // Get capability=>flavor mappings
         status := "free"
-        if curnode.ProvisionState != "" || curnode.InstanceUUID != "" || curnode.Maintenance == true {
+        if curnode.ProvisionState != "" || curnode.InstanceUUID != "" || curnode.Maintenance {
             status = "used"
         }
         ironicCapacityDataRet.UpdateIronicNodeCapInfo(
