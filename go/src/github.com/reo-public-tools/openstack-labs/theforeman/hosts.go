@@ -211,6 +211,7 @@ type NewHostData struct {
         Capabilities             string                     `json:"capabilities,omitempty"`
         ComputeProfileID         int                        `json:"compute_profile_id,omitempty"`
         InterfacesAttributes     InterfacesAttributes       `json:"interfaces_attributes,omitempty"`
+        ComputeAttributes        ComputeAttributes          `json:"compute_attributes,omitempty"`
 }
 
 type HostParametersAttributes struct {
@@ -252,6 +253,10 @@ type NetInterface struct {
         Mode            string   `json:"mode,omitempty"`
         AttachedDevices []string `json:"attached_devices,omitempty"`
         BondOptions     string   `json:"bond_options,omitempty"`
+}
+
+type ComputeAttributes struct {
+        Start           string   `json:"start,omitempty"`
 }
 
 // Structures used to create a new interface
@@ -533,13 +538,18 @@ func CreateSimulatedHost(url string,
             LocationID: locationID,
             HostgroupID: hostGroupID,
             DomainID: domainInfo.ID,
+            ProvisionMethod: "image",
+            ComputeAttributes: ComputeAttributes{
+                Start: "1",
+            },
             InterfacesAttributes: InterfacesAttributes{
                 Primary: NetInterface{
                     Name: hostName,
                     DomainID: domainInfo.ID,
                     Primary: true,
-                    Managed: false,
-                    Provision: false,
+                    Managed: true,
+                    Provision: true,
+                    SubnetID: subnetmap["MNAIO-PROV"],
                 },
                 Management: NetInterface{
                     Identifier: "br-mgmt",

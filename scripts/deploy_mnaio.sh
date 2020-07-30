@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -o pipefail
+
 # Run this from the parent of the scripts dir.
 
 ##############

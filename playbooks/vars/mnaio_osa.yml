@@ -5,7 +5,8 @@ base_images:
   - image_name: "Ubuntu18.04.qcow2"
     mnaio_version: "stable/train"
     url: https://cloud-images.ubuntu.com/releases/bionic/release/ubuntu-18.04-server-cloudimg-amd64.img
-    checksum: sha256:aa134bb2960ccacbbd1025fffbb0e2acdc9ee265498bbbcefd067326f8316a9f
+    checksum: sha256:438ddba6294b41e05852536b5b55d0a09e74585465e6e9bbd4e5f07528aef6ba
+    #checksum: sha256:aa134bb2960ccacbbd1025fffbb0e2acdc9ee265498bbbcefd067326f8316a9f
     #checksum: sha256:4c62247baa2e8c480a924ff9dfa6f56f86f848f2477d3f7d36c532af6bdf0907
     user_data: true
     username: "ubuntu"

@@ -37,17 +37,17 @@ environment:
   - foreman-hostgroup: "osa-infra-ubuntu-bionic"
     role: "infra"
     simulator-name: "libvirt-mnaio"
-    count: 1
-#  - foreman-hostgroup: "osa-infra-ubuntu-bionic"
-#    simulator-name: "libvirt-mnaio"
-#    count: 3
-#  - foreman-hostgroup: "osa-loadbalancer-ubuntu-bionic"
-#    simulator-name: "libvirt-mnaio"
-#    count: 2
-#  - foreman-hostgroup: "osa-compute-ubuntu-bionic"
-#    simulator-name: "libvirt-mnaio"
-#    count: 2
-#  - foreman-hostgroup: "osa-ceph-ubuntu-bionic"
-#    simulator-name: "libvirt-mnaio"
-#    count: 3
+    count: 3
+  - foreman-hostgroup: "osa-loadbalancer-ubuntu-bionic"
+    role: "haproxy"
+    simulator-name: "libvirt-mnaio"
+    count: 2
+  - foreman-hostgroup: "osa-compute-ubuntu-bionic"
+    role: "compute"
+    simulator-name: "libvirt-mnaio"
+    count: 2
+  - foreman-hostgroup: "osa-ceph-ubuntu-bionic"
+    role: "ceph"
+    simulator-name: "libvirt-mnaio"
+    count: 3
 
