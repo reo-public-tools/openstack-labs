@@ -267,6 +267,119 @@ type InterfacePostData struct {
         Interface NetInterface `json:"interface"`
 }
 
+// Structures used to pull vm_compute_attributes for a host
+type VMComputeAttributes struct {
+        Persistent        bool                         `json:"persistent,omitempty"`
+        CPUs              int                          `json:"cpus,omitempty"`
+        MemorySize        int                          `json:"memory_size,omitempty"`
+        Name              string                       `json:"name,omitempty"`
+        OSType            string                       `json:"os_type,omitempty"`
+        Arch              string                       `json:"arch,omitempty"`
+        DomainType        string                       `json:"domain_type,omitempty"`
+        BootOrder         []string                     `json:"boot_order,omitempty"`
+        Display           Display                      `json:"display,omitempty"`
+        CPU               interface{}                  `json:"cpu,omitempty"`
+        UUID              string                       `json:"uuid,omitempty"`
+        MaxMemorySize     int                          `json:"max_memory_size,omitempty"`
+        CPUTime           int                          `json:"cputime,omitempty"`
+        Autostart         bool                         `json:"autostart,omitempty"`
+        Active            bool                         `json:"active,omitempty"`
+        Nics              []Nics                       `json:"nics,omitempty"`
+        State             string                       `json:"state,omitempty"`
+        VolumesAttributes map[string]VolumesAttributes `json:"volumes_attributes,omitempty"`
+        Memory            int                          `json:"memory,omitempty"`
+}
+
+type Display struct {
+        Type   string `json:"type,omitempty"`
+        Port   string `json:"port,omitempty"`
+        Listen string `json:"listen,omitempty"`
+}
+
+type Nics struct {
+        Type    string `json:"type,omitempty"`
+        Model   string `json:"model,omitempty"`
+        MAC     string `json:"mac,omitempty"`
+        Network string `json:"network,omitempty"`
+        Bridge  string `json:"bridge,omitempty"`
+}
+
+type VolumesAttributes struct {
+        Persistent bool   `json:"persistent,omitempty"`
+        FormatType string `json:"format_type,omitempty"`
+        Name       string `json:"name,omitempty"`
+        Capacity   int    `json:"capacity,omitempty"`
+        Allocation int    `json:"allocation,omitempty"`
+        Owner      string `json:"owner,omitempty"`
+        Group      string `json:"group,omitempty"`
+        PoolName   string `json:"pool_name,omitempty"`
+        Key        string `json:"key,omitempty"`
+        ID         string `json:"id,omitempty"`
+        Path       string `json:"path,omitempty"`
+}
+
+// Get vm_compute_attributes for a host
+func GetHostVMComputeAttributes(url string, session string, hostID interface{}) (VMComputeAttributes, error) {
+
+    sysLogPrefix := "theforeman(package).hosts(file).GetHostVMComputeAttributes(func):"
+    _ = sysLog.Debug(fmt.Sprintf("%s Getting VM Compute Attributes for host %v", sysLogPrefix, hostID))
+
+    // Init some vars
+    hostVMComputeAttributes := VMComputeAttributes{}
+
+    // Set the query url
+    var requesturl string = fmt.Sprintf("%s/api/hosts/%v/vm_compute_attributes", url, hostID)
+
+    // Set up the basic request from the url and body
+    req, err := http.NewRequest("GET", requesturl, nil)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return hostVMComputeAttributes, err
+    }
+
+    // Make sure we are using the proper content type for the configs api
+    req.Header.Set("Content-Type", "application/json")
+    req.Header.Set("Accept", "application/json,version=2")
+
+    // Set the session Cookie header
+    req.Header.Set("Cookie", fmt.Sprintf("_session_id=%s", session))
+
+    // Disable tls verify
+    tr := &http.Transport{
+        TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+    }
+
+    // Set up the http client and do the request
+    client := &http.Client{Transport: tr}
+    resp, err := client.Do(req)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return hostVMComputeAttributes, err
+    }
+    defer resp.Body.Close()
+
+    // Read in the body and check status
+    body, _ := ioutil.ReadAll(resp.Body)
+    if resp.StatusCode != 200 {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, string(body)))
+        return hostVMComputeAttributes, fmt.Errorf("%s %s", sysLogPrefix, string(body))
+    }
+
+    // Convert the body to a byte array
+    bytes := []byte(body)
+
+    // Unmarshall the json byte array into a struct
+    err = json.Unmarshal(bytes, &hostVMComputeAttributes)
+    if err != nil {
+        _ = sysLog.Err(fmt.Sprintf("%s %s", sysLogPrefix, err))
+        return hostVMComputeAttributes, err
+    }
+
+    return hostVMComputeAttributes, nil
+
+}
+
+
 // Create a new host
 func CreateHost(url string,
                 session string,

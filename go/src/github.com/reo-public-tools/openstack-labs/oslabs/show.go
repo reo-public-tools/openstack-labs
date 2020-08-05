@@ -2,6 +2,7 @@ package main
 
 import (
     "fmt"
+    "sort"
     "github.com/reo-public-tools/openstack-labs/theforeman"
     "github.com/reo-public-tools/openstack-labs/osutils"
 )
@@ -125,12 +126,14 @@ func Show(labName string) (error) {
     }
 
 
-    // Display host listing
+    // Get details on a host
     _ = sysLog.Info(fmt.Sprintf("Pulling host listing for domain: %s\n", domainInfo.Name))
     detailedHostList, err := theforeman.GetHostsDetailsByDomainID(labConfig.ForemanURL, session, domainInfo.ID)
     if err != nil {
         return err
     }
+
+    // Display host listing
     if len(detailedHostList) > 0 {
         fmt.Printf("\n  Host Information\n")
         for _, curHost := range detailedHostList {
@@ -141,10 +144,52 @@ func Show(labName string) (error) {
             fmt.Printf("      %-35s %s\n", "Puppet Env:", curHost.EnvironmentName)
             fmt.Printf("      Allocated IPs:\n")
             for _, curInterface := range curHost.Interfaces {
+                if curInterface.IP == "" {
+                    continue
+                }
                 if ! curInterface.Primary {
                     fmt.Printf("        %-20s %s\n", curInterface.SubnetName + ":", curInterface.IP)
                 }
             }
+
+            // If the resource name is libvirt-mnaio lets pull some additional info
+            if curHost.ComputeResourceName == "libvirt-mnaio" {
+
+                // Pull vm_compute_attributes 
+                _ = sysLog.Info(fmt.Sprintf("Pulling host vm compute attributes for host: %s\n", curHost.Name))
+                hostVMComputeAttributes, err := theforeman.GetHostVMComputeAttributes(labConfig.ForemanURL, session, curHost.ID)
+                if err != nil {
+                    return err
+                }
+                fmt.Printf("      VM Specific Info:\n")
+                fmt.Printf("        %-8s %d\n", "CPUs:", hostVMComputeAttributes.CPUs)
+                fmt.Printf("        %-8s %dG\n", "Memory:", hostVMComputeAttributes.MemorySize / 1024 / 1024)
+                for _, curNic := range hostVMComputeAttributes.Nics {
+                    fmt.Printf("        Interface: %-20s %-21s %s\n", 
+                                                    "Mac(" + curNic.MAC + ")",
+                                                    "Network(" + curNic.Network + ")",
+                                                    "Bridge(" + curNic.Bridge + ")")
+                }
+
+                // Sort by key and parse though the sorted volumes
+                keys := make([]string, 0, len(hostVMComputeAttributes.VolumesAttributes))
+                for k := range hostVMComputeAttributes.VolumesAttributes {
+                    keys = append(keys, k) 
+                }
+                sort.Strings(keys)
+                for _, k := range keys {
+                    if hostVMComputeAttributes.VolumesAttributes[k].FormatType == "iso" {
+                        continue
+                    }
+                    fmt.Printf("        Volume: %-11s %-9s %-10s %s\n",
+                                    "Type(" + hostVMComputeAttributes.VolumesAttributes[k].FormatType + ")",
+                                    "Size(" + fmt.Sprintf("%d", hostVMComputeAttributes.VolumesAttributes[k].Capacity) + "G)",
+                                    "Pool(" + hostVMComputeAttributes.VolumesAttributes[k].PoolName + ")",
+                                    "Name(" + hostVMComputeAttributes.VolumesAttributes[k].Name + ")")
+                }
+
+
+            } // End if curHost.ComputeResourceName == "libvirt-mnaio" 
         }
     }
 
